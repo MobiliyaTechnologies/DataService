@@ -75,6 +75,7 @@ namespace DataProcessor.Managers
         private string ReadValueFromBlobStorage(string serverName, string fileNamePrefix)
         {
             CloudBlobContainer container = blobClient.GetContainerReference(ConfigurationSettings.BlobContainerName);
+            container.CreateIfNotExists();
             CloudBlockBlob blockBlob = container.GetBlockBlobReference(fileNamePrefix + serverName + storageFileExtension);
             string text = null;
             if (blockBlob.Exists())
@@ -91,6 +92,7 @@ namespace DataProcessor.Managers
         public void DownloadFileFromBlob(string fileName,string fileExtension,string storePath)
         {
             CloudBlobContainer container = blobClient.GetContainerReference(ConfigurationSettings.BlobContainerName);
+            container.CreateIfNotExists();
             CloudBlockBlob blockBlob = container.GetBlockBlobReference(fileName + fileExtension);
            
             if (blockBlob.Exists())

@@ -6,7 +6,6 @@ using DataProcessor.Utils;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
@@ -37,18 +36,25 @@ namespace DataProcessor
         {
             try
             {
-                Console.WriteLine("Init ProcessDats");
-                ConnectionManager.Instance().Initialize();
-                Console.WriteLine("Done with Console manager initialization");
-                BlobStorageManager.Instance().ConfigureBlobStorage();
-                Console.WriteLine("Done with Blob Storage configuration");
-
-                foreach (var piServer in ConnectionManager.Instance().GetPIServerList())
+                if (!((string.IsNullOrEmpty(ConfigurationSettings.PiServer)) || (string.IsNullOrEmpty(ConfigurationSettings.AzureConnectionString)) || (string.IsNullOrEmpty(ConfigurationSettings.StorageConnectionString))
+               || (string.IsNullOrEmpty(ConfigurationSettings.BlobContainerName))))
                 {
-                    Thread piThread = new Thread(() => { ProcessDataByPIServer(piServer); });
-                    piThread.Start();
-                    Thread sensorThread = new Thread(() => { InsertSensorData(piServer); });
-                    sensorThread.Start();
+                    Console.WriteLine("Init ProcessData");
+                    ConnectionManager.Instance().Initialize();
+                    Console.WriteLine("Done with Console manager initialization");
+                    BlobStorageManager.Instance().ConfigureBlobStorage();
+                    Console.WriteLine("Done with Blob Storage configuration");
+
+                    string piServer = ConnectionManager.Instance().GetPIServer();
+                        Thread piThread = new Thread(() => { ProcessDataByPIServer(piServer); });
+                        piThread.Start();
+                        Thread sensorThread = new Thread(() => { InsertSensorData(piServer); });
+                        sensorThread.Start();
+
+                }
+                else
+                {
+                    Console.WriteLine("Doesn't have sufficient data in app config for connection");
                 }
             }
             catch (Exception e)
@@ -228,8 +234,9 @@ namespace DataProcessor
                             else
                             {
                                 //will wait for half an hour if there is not all entries in selected half hour block i.e 29 entries
-                                Thread.Sleep(1800000);
                                 Console.WriteLine("**************Sleeping*******************");
+                                Thread.Sleep(1800000);
+                                
                             }
                         }
 
