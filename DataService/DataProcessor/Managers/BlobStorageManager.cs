@@ -67,14 +67,14 @@ namespace DataProcessor.Managers
 
         private void SaveValueToBlobStorage(string serverName, string fileNamePrefix, string value)
         {
-            CloudBlobContainer container = blobClient.GetContainerReference(ConfigurationSettings.BlobContainerName);
+            CloudBlobContainer container = blobClient.GetContainerReference(Constants.BLOB_STOARAGE_CONTAINER);
             CloudBlockBlob blockBlob = container.GetBlockBlobReference(fileNamePrefix + serverName + storageFileExtension);
             blockBlob.UploadText(value);
         }
 
         private string ReadValueFromBlobStorage(string serverName, string fileNamePrefix)
         {
-            CloudBlobContainer container = blobClient.GetContainerReference(ConfigurationSettings.BlobContainerName);
+            CloudBlobContainer container = blobClient.GetContainerReference(Constants.BLOB_STOARAGE_CONTAINER);
             container.CreateIfNotExists();
             CloudBlockBlob blockBlob = container.GetBlockBlobReference(fileNamePrefix + serverName + storageFileExtension);
             string text = null;
@@ -91,7 +91,7 @@ namespace DataProcessor.Managers
 
         public void DownloadFileFromBlob(string fileName,string fileExtension,string storePath)
         {
-            CloudBlobContainer container = blobClient.GetContainerReference(ConfigurationSettings.BlobContainerName);
+            CloudBlobContainer container = blobClient.GetContainerReference(Constants.BLOB_STOARAGE_CONTAINER);
             container.CreateIfNotExists();
             CloudBlockBlob blockBlob = container.GetBlockBlobReference(fileName + fileExtension);
            
