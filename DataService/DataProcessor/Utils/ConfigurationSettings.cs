@@ -23,14 +23,10 @@ namespace DataProcessor.Utils
 
         public static readonly string AzureConnectionString = GetConfigData("AzureConnectionString");
 
-        public static readonly string StorageConnectionString = GetConfigData("BlobStorageConnectionString");
+        public static readonly string StorageConnectionString = GetConfigData("BlobStorageConnectionString");        
 
-        public static readonly string BlobContainerName = GetConfigData("BlobContainerName");
-
-        public static readonly string PiServers = GetConfigData("PiServers");
-
-        public static readonly string PIConnectionString = GetConfigData("PIConnectionString");
-        
+        public static readonly string PiServer = GetConfigData("PiServer");
+                
         private static string GetConfigData(string key)
         {
             return ConfigurationManager.AppSettings[key];

@@ -16,11 +16,11 @@ namespace DataProcessor.Managers
 
 
         #region PUBLIC VARIABLES
-        private List<string> PIServerList { get; set; }
+        private string PIServer { get; set; }
         #endregion
 
         #region PRIVATE VARIABLES
-        private List<DatabaseInfo> DatabaseInfoList { get; set; }
+        private DatabaseInfo DatabaseInfo { get; set; }
         #endregion
 
         #region SINGLETON
@@ -42,14 +42,10 @@ namespace DataProcessor.Managers
 
         public void Initialize()
         {
-            PIServerList = new List<string>();
             Console.WriteLine("In Initialize");
-            string piServers = ConfigurationSettings.PiServers;
-            Console.WriteLine("Get Pi server Settings :: "+piServers);
-            PIServerList = piServers.Split(';').ToList<string>();
-            DatabaseInfoList = new List<DatabaseInfo>();
-            //Available server requires if user added multiple server in config file and those server is not available in database
-            List<string> availableServers = new List<string>();
+            PIServer = ConfigurationSettings.PiServer;
+            Console.WriteLine("Get Pi server Settings :: "+ PIServer);
+            DatabaseInfo = new DatabaseInfo();
 
             //To Do
             //Looping pi server list and call get db connection string api and update DatabaseInfoList  with the same
@@ -72,15 +68,21 @@ namespace DataProcessor.Managers
             //        DatabaseInfoList.Add(new DatabaseInfo() { Name = server, ConnectionString = piConfigResponseModel.PiServerURL });
             //    }
             //}
-            availableServers.Add(PIServerList.ElementAt(0));
-            DatabaseInfoList.Add(new DatabaseInfo() { Name = PIServerList.ElementAt(0), ConnectionString = ConfigurationSettings.PIConnectionString});
 
-            PIServerList = availableServers;
+            string connectionString = GetConnectionStringFromDB(PIServer);
+            if (!string.IsNullOrEmpty(connectionString))
+            {
+                DatabaseInfo = new DatabaseInfo() { Name = PIServer, ConnectionString = connectionString };
+            }
+            else
+            {
+                Console.WriteLine("Failed to fetch connection string from DB for PI Server = " + PIServer);
+            }
         }
 
-        public List<string> GetPIServerList()
+        public string GetPIServer()
         {
-            return PIServerList;
+            return PIServer;
         }
 
         /// <summary>
@@ -110,8 +112,25 @@ namespace DataProcessor.Managers
 
         string GetPISQLConnectionString(string serverName)
         {
-            //TO DO
-            return DatabaseInfoList.Where(x => x.Name == serverName).FirstOrDefault().ConnectionString;
+            
+            return DatabaseInfo.ConnectionString;
+        }
+
+        string GetConnectionStringFromDB(string serverName)
+        {
+            string connectionString = null;
+            string query = "Select PiServerURL from PiServer where PiServerName = @PiServerName";
+            SqlConnection azureConnection = new SqlConnection(ConfigurationSettings.AzureConnectionString);
+            azureConnection.Open();
+            SqlCommand cmd = new SqlCommand(query, azureConnection);
+            cmd.Parameters.Add(new SqlParameter("PiServerName", serverName));
+            SqlDataReader reader = cmd.ExecuteReader();
+            while (reader.Read()) //Runs only once
+            {
+                connectionString =  Convert.ToString(reader[0]);
+            }
+            azureConnection.Close();
+            return connectionString;
         }
 
 

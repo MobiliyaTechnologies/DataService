@@ -6,7 +6,6 @@ using DataProcessor.Utils;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
@@ -37,18 +36,27 @@ namespace DataProcessor
         {
             try
             {
-                Console.WriteLine("Init ProcessDats");
-                ConnectionManager.Instance().Initialize();
-                Console.WriteLine("Done with Console manager initialization");
-                BlobStorageManager.Instance().ConfigureBlobStorage();
-                Console.WriteLine("Done with Blob Storage configuration");
-
-                foreach (var piServer in ConnectionManager.Instance().GetPIServerList())
+                if (!((string.IsNullOrEmpty(ConfigurationSettings.PiServer)) || (string.IsNullOrEmpty(ConfigurationSettings.AzureConnectionString)) || (string.IsNullOrEmpty(ConfigurationSettings.StorageConnectionString))
+              ))
                 {
+                    Console.WriteLine("Init ProcessData");
+                    ConnectionManager.Instance().Initialize();
+                    Console.WriteLine("Done with Console manager initialization");
+                    BlobStorageManager.Instance().ConfigureBlobStorage();
+                    Console.WriteLine("Done with Blob Storage configuration");
+
+                    string piServer = ConnectionManager.Instance().GetPIServer();
+
+
                     Thread piThread = new Thread(() => { ProcessDataByPIServer(piServer); });
                     piThread.Start();
                     Thread sensorThread = new Thread(() => { InsertSensorData(piServer); });
                     sensorThread.Start();
+
+                }
+                else
+                {
+                    Console.WriteLine("Doesn't have sufficient data in app config for connection");
                 }
             }
             catch (Exception e)
@@ -69,7 +77,7 @@ namespace DataProcessor
                 try
                 {
                     double utcConversionTime = GetAndTimezone();
-
+                    double sleepTimeInMins = 30;
                     //To Do get connection basis of PI server using Connection Manager
                     SqlConnection piConnection = ConnectionManager.Instance().GetPISQLConnection(piServerName);
                     ConnectionManager.Instance().OpenSQLConnection(piConnection);
@@ -82,12 +90,25 @@ namespace DataProcessor
 
                     //We need this meterlist, bcoz we going to process data meter by meter
                     List<string> meterList = new List<string>();
-                    meterList = getMeterList(piServerName);
+                    var meterDetails = getMeterDetails(piServerName);
+                    //Need to call this again and again, if any new meter gets added in PI Server.
+                    var meterAndBreakerDetailsListFromPI = getMeterAndBreakerDetailsList(piServerName);
+                    if (meterDetails != null && meterDetails.Count != 0)
+                    {
+                        var metersToInsert = meterAndBreakerDetailsListFromPI.Where(p => !meterDetails.Any(p2 => p2.PowerScout == p.PowerScout)).ToList();
+                        InsertMetersIntoAzure(metersToInsert);
+                    }
+                    else
+                    {
+                        InsertMetersIntoAzure(meterAndBreakerDetailsListFromPI);
+                    }
+                    meterList = meterAndBreakerDetailsListFromPI.Select(x => x.PowerScout).ToList();
                     ProcessedDataModel processedDataInfo = BlobStorageManager.Instance().GetLastProcessedData<ProcessedDataModel>(piServerName, Constants.THRESHOLD_METER_STORAGE_FILENAME_PREFIX);
                     if (processedDataInfo == null)
                         processedDataInfo = new ProcessedDataModel { MeterTimestamp = new Dictionary<string, DateTime>() };
                     Dictionary<string, DateTime> meterTimestamp = processedDataInfo.MeterTimestamp;
                     //Todo need to add validation here at timestamp whether it is null or not, if it is null then have to add default value
+
                     meterList.All(meter =>
                     {
                         if (!meterTimestamp.ContainsKey(meter))
@@ -216,10 +237,11 @@ namespace DataProcessor
                         //Hack Hack Hack
                         if (meterDataList != null && meterDataList.Count != 0)
                         {
-                            //This condition means we get all (29)entries of that perticular half hour
+                            //    This condition means we get all(29)entries of that perticular half hour
                             if (Utility.TrimDateToMinute(lastProcessedDate) == endTime.AddMinutes(-1))
                             {
                                 Console.WriteLine("Now going to update Database");
+                                sleepTimeInMins = 0;
                                 updateDatabase(meterDataList);
                                 processedDataInfo.MeterTimestamp = meterTimestamp;
                                 Console.Write("Storing value to Blob : " + processedDataInfo);
@@ -227,18 +249,25 @@ namespace DataProcessor
                             }
                             else
                             {
-                                //will wait for half an hour if there is not all entries in selected half hour block i.e 29 entries
-                                Thread.Sleep(1800000);
-                                Console.WriteLine("**************Sleeping*******************");
+                                if (sleepTimeInMins != 0)
+                                {
+                                    if (sleepTimeInMins > (endTime - Utility.TrimDateToMinute(lastProcessedDate)).Minutes)
+                                    {
+                                        sleepTimeInMins = (endTime - Utility.TrimDateToMinute(lastProcessedDate)).Minutes;
+                                    }
+                                }
                             }
                         }
 
                         return true;
                     });
 
-
+                    
                     ConnectionManager.Instance().CloseSQLConnection(piConnection);
                     ConnectionManager.Instance().CloseSQLConnection(weatherConnection);
+                    Console.WriteLine("**************Sleeping for "+ (Convert.ToInt32(sleepTimeInMins) * 60 * 1000) + " minutes**************");
+                    //Convert Minutes to millis
+                    Thread.Sleep(Convert.ToInt32(sleepTimeInMins) * 60 * 1000);
                 }
                 catch (Exception e)
                 {
@@ -358,6 +387,8 @@ namespace DataProcessor
             }
         }
 
+
+
         WeatherDetails GetWeatherDetails(DateTime utcDate, SqlConnection weatherConnection)
         {
 
@@ -439,19 +470,26 @@ namespace DataProcessor
             return timeperiod;
         }
 
-        public List<string> getMeterList(string serverName)
+        public List<MeterInfoModel> getMeterAndBreakerDetailsList(string serverName)
         {
+            List<MeterInfoModel> meterList = new List<MeterInfoModel>();
             try
             {
-                List<string> meterList = new List<string>();
                 SqlConnection getMeterListConnection = ConnectionManager.Instance().GetPISQLConnection(serverName);
                 ConnectionManager.Instance().OpenSQLConnection(getMeterListConnection);
 
-                SqlCommand cmdMeterList = new SqlCommand("SELECT DISTINCT(PowerScout) FROM (SELECT TOP 10000 * FROM PowergridView order by TimeStamp DESC) as a", getMeterListConnection);
+                SqlCommand cmdMeterList = new SqlCommand("SELECT DISTINCT(PowerScout), [Breaker Details] FROM (SELECT TOP 10000 * FROM PowergridView order by TimeStamp DESC) as a", getMeterListConnection);
                 SqlDataReader meterListRawDataReader = cmdMeterList.ExecuteReader();
                 while (meterListRawDataReader.Read())
                 {
-                    meterList.Add(meterListRawDataReader[0].ToString());
+                    meterList.Add(
+                        new MeterInfoModel()
+                        {
+                            PowerScout = meterListRawDataReader["PowerScout"].ToString(),
+                            Breaker_details = meterListRawDataReader["Breaker Details"].ToString(),
+                            PiServerName = serverName
+                        }
+                       );
                 }
                 ConnectionManager.Instance().CloseSQLConnection(getMeterListConnection);
                 return meterList;
@@ -459,9 +497,48 @@ namespace DataProcessor
             catch (Exception ex)
             {
                 Console.WriteLine("Exception occured in get Meter List " + ex.Message);
-                return new List<string>();
+                return meterList;
             }
         }
+
+        public List<MeterInfoModel> getMeterDetails(string serverName)
+        {
+
+            List<MeterInfoModel> meterList = new List<MeterInfoModel>();
+            SqlConnection azureSQLConnection = new SqlConnection();
+            try
+            {
+                azureSQLConnection.ConnectionString = ConfigurationSettings.AzureConnectionString;
+                azureSQLConnection.Open();
+                SqlCommand cmdGetMeters = new SqlCommand("Select DISTINCT(PowerScout) from AzureMeterDetails ", azureSQLConnection);
+
+                SqlDataReader meterListDataReader = cmdGetMeters.ExecuteReader();
+
+                while (meterListDataReader.Read())
+                {
+                    MeterInfoModel meter = new MeterInfoModel();
+
+                    if (meterListDataReader["PowerScout"] != DBNull.Value)
+                        meter.PowerScout = meterListDataReader["PowerScout"].ToString();
+                    //if (meterListDataReader["Breaker Details"] != DBNull.Value)
+                    //    meter.Breaker_details = meterListDataReader["Breaker Details"].ToString();
+                    //if (meterListDataReader["PiServerName"] != DBNull.Value)
+                    //    meter.PiServerName = meterListDataReader["PiServerName"].ToString();
+
+                    meterList.Add(meter);
+                }
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+            finally
+            {
+                azureSQLConnection.Close();
+            }
+            return meterList;
+        }
+
 
         private void InsertSensorData(string piServerName)
         {
@@ -472,6 +549,108 @@ namespace DataProcessor
             }
 
         }
+
+
+        //public void InsertMeterData(string piServerName, string powerScout)
+        // {
+        //     try
+        //     {
+
+        //         var meterList = this.getMeterDetails(piServerName);
+
+        //         //ProcessedDataModel processedDataInfo = BlobStorageManager.Instance().GetLastProcessedData<ProcessedDataModel>(piServerName, Constants.THRESHOLD_SENSOR_STORAGE_FILENAME_PREFIX);
+        //         //if (processedDataInfo == null)
+        //         //    processedDataInfo = new ProcessedDataModel();
+
+        //         //DateTime processedTimestamp = Convert.ToDateTime(processedDataInfo.MeterTimestamp);
+        //         //DateTime firstEntryTimeStamp = processedTimestamp;
+        //         //To do need to check this
+        //         //if (processedTimestamp == null || processedTimestamp == DateTime.MinValue || processedTimestamp == default(DateTime))
+        //         //{
+        //         //    SqlConnection meterFirstEntryConn = ConnectionManager.Instance().GetPISQLConnection(piServerName);
+        //         //    ConnectionManager.Instance().OpenSQLConnection(meterFirstEntryConn);
+        //         //    //Read data from PI Server
+        //         //    SqlCommand getTimestamp = new SqlCommand("SELECT TOP 1 TimeStamp FROM SensorData order by Timestamp", sensorFirstEntryConn);
+
+        //         //    SqlDataReader result = getTimestamp.ExecuteReader();
+        //         //    while (result.Read()) //Runs only once
+        //         //    {
+        //         //        firstEntryTimeStamp = (DateTime)result[0];
+        //         //    }
+        //         //    ConnectionManager.Instance().CloseSQLConnection(sensorFirstEntryConn);
+        //         //}
+
+        //         //SqlConnection azureSQLConnection = new SqlConnection();
+        //         //azureSQLConnection.ConnectionString = ConfigurationSettings.AzureConnectionString;
+        //         //azureSQLConnection.Open();
+
+        //         SqlConnection getMeterDataConn = ConnectionManager.Instance().GetPISQLConnection(piServerName);
+        //         ConnectionManager.Instance().OpenSQLConnection(getMeterDataConn);
+        //         SqlCommand getMeterDataCommand = new SqlCommand("SELECT top 1 [Breaker Details] FROM PowerGridView where powerScout = @meter", getMeterDataConn);
+        //         // processedTimestamp = firstEntryTimeStamp;
+
+        //         getMeterDataCommand.Parameters.Add(new SqlParameter("@meter", powerScout));
+        //         SqlDataReader piMeterDataReader = getMeterDataCommand.ExecuteReader();
+        //         try
+        //         {
+        //             while (piMeterDataReader.Read())
+        //             {
+        //                 var meterDetail = meterList.Where(meter => meter.PowerScout.Equals(powerScout)).FirstOrDefault();
+        //                 if (meterDetail == null)
+        //                 {
+        //                     this.AddNewMeterToAzureAndGenerateNotification(powerScout, piMeterDataReader["Breaker Details"].ToString(), piServerName);
+
+        //                     meterList = this.getMeterDetails(piServerName);
+        //                     // meterDetail = meterList.Where(meter => meter.PowerScout.Equals(piMeterDataReader["PowerScout"])).FirstOrDefault();
+        //                     // this.AddNewAlert(0, sensorDetail.Sensor_Id, "Device Alert", "New device found with name " + sensorDetail.Sensor_Name, DateTime.UtcNow, 0, piServerName);
+        //                 }
+
+        //             }
+        //         }
+        //         catch (Exception e)
+        //         {
+
+        //         }
+        //         finally
+        //         {
+        //             ConnectionManager.Instance().CloseSQLConnection(getMeterDataConn);
+        //         }
+        //         //processedDataInfo.MeterTimestamp = proc;
+        //         //Console.WriteLine("Storing Sensor Details : " + processedDataInfo);
+        //         //BlobStorageManager.Instance().SetLastProcessedData<ProcessedSensorDataModel>(piServerName, Constants.THRESHOLD_SENSOR_STORAGE_FILENAME_PREFIX, processedDataInfo);
+
+        //     }
+        //     catch (Exception ex)
+        //     {
+
+        //     }
+        // }
+
+
+
+        void InsertMetersIntoAzure(List<MeterInfoModel> meterList)
+        {
+            try
+            {
+                foreach (var meter in meterList)
+                {
+                    //Insert New Sensor into Azure
+                    SqlConnection azureSQLConnection = new SqlConnection();
+                    azureSQLConnection.ConnectionString = ConfigurationSettings.AzureConnectionString;
+                    azureSQLConnection.Open();
+                    SqlCommand cmdInsertMeters = new SqlCommand("INSERT INTO AzureMeterDetails(PowerScout,Breaker_details,PiServerName) VALUES (@PowerScout,@Breaker_details,@PiServerName)", azureSQLConnection);
+                    cmdInsertMeters.Parameters.Add(new SqlParameter("@PowerScout", meter.PowerScout));
+                    cmdInsertMeters.Parameters.Add(new SqlParameter("@Breaker_details", meter.Breaker_details));
+                    cmdInsertMeters.Parameters.Add(new SqlParameter("@PiServerName", meter.PiServerName));
+                    cmdInsertMeters.ExecuteNonQuery();
+                    azureSQLConnection.Close();
+                }
+            }
+            catch (Exception e)
+            {
+
+            }
+        }
         public double GetAndTimezone()
         {
             TimeZone localZone = TimeZone.CurrentTimeZone;
@@ -481,3 +660,4 @@ namespace DataProcessor
         #endregion
     }
 }
+

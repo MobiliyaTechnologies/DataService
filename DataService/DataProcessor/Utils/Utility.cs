@@ -119,6 +119,10 @@ namespace DataProcessor.Utils
                 }
 
             }
+            else
+            {
+                Console.WriteLine("Not having sufficient value to send notification");
+            }
         }
     }
 }

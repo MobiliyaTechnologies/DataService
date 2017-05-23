@@ -58,6 +58,7 @@
     <Compile Include="DataModels\ClassOccupanyDetails.cs" />
     <Compile Include="DataModels\DatabaseInfo.cs" />
     <Compile Include="DataModels\LocalDataModel.cs" />
+    <Compile Include="DataModels\PowerScoutModel.cs" />
     <Compile Include="DataModels\SensorMasterModel.cs" />
     <Compile Include="DataModels\WeatherDetails.cs" />
     <Compile Include="DataProcessor.cs" />

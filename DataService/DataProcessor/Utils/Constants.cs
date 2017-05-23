@@ -15,6 +15,7 @@ namespace DataProcessor.Utils
         public const double SENSOR_DATA_THREAD_TIMER = 120000;
         public const string CLASS_SCHEDULE_STORAGE_FILE_PREFIX = "ClassSchedule_";
         public const string CLASS_SCHEDULE_STORAGE_FILE_EXTENSION = ".csv";
+        public const string BLOB_STOARAGE_CONTAINER = "EnergyManagementContainer";
 
 
     }
