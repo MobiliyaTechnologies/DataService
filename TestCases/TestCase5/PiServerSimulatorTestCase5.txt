@@ -1,0 +1,37 @@
+PiServer1:
+Make local server to your system say System1.
+Create database same as the PiServer.
+
+Update AppConfig file of Simulator say simulator1
+PiConnectionString  = "data source=KETANK-PC\SQLEXPRESS;initial catalog=PiTestCase1;persist security info=True;user id=sa;password=Mobiliya@123"
+
+Update/uncomment code in GetPowerGridView class as per PiServer say piserver7.
+
+
+Note: This simulator works with the current time same as the real system would be.
+
+This updates/inserts table 'Powergridview','SensorData',and 'Weather'
+
+This simulator based on the assumptions 
+1 university 
+1 campus
+Each campus has 1 PiServers
+Each campus/PiServer has 2 buildings say Chemistry building, Science buidling.
+Each Buidling has 2 unique powerscouts.
+
+
+So for 1 PiServer we have 4 unique powerscouts and 2 unique buidlings with 1 unique campuses.
+
+Time required to process data:
+1 day data: 10 minutes approx.
+1 week data: 46 minutes approx.
+2 week data: 101 minutes approx.(55 minutes approx.)
+3 week data: 157 minutes approx.(56 minutes approx.)
+4 week data:  221 minutes approx. (64 minutes approx.)
+
+Note: This data depends on network stability. 
+
+
+
+
+

@@ -1,0 +1,22 @@
+For PiServer1:
+Please update AppConfig Keys with the below values
+PiServer = "PiServer1"
+AzureConnectionString = "Server=tcp:sqlserverlihbzibx42jhi.database.windows.net,1433;Initial Catalog=TestCase1;Persist Security Info=False;User ID=piadmin;Password=Micr0s0ft12!@;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+BlobStorageConnectionString = "DefaultEndpointsProtocol=https;AccountName=mlstrlihbzibx42jhi;AccountKey=pT+edpY9+AulSro6IRpRdQgFQp/r/Ty4SdtAFqOLTVJFcTLLH9bQCvFjmkVlfHDbZI7ySS+tlXjRAVmslukfFg==;EndpointSuffix=core.windows.net"
+
+Delete processed info files from blob storage if exists.
+Delete all rows from Azure Tables for PiServer7.
+Upload ClassSchedule_PiServer7.csv file on Blob storage under "EnergyManagementContainer",considering "EnergyManagementContainer" will exists in blob storage.
+
+
+Update table PiServer in Azure:
+Insert row into the University table  with proper details.
+Insert row into the Campus table with proper details like University id we have made above.
+Insert rows for both the PiServers with their name and connection string(your local database connection string which gets updated by simulator) along with Campus Id and University Id.
+
+
+
+
+
+
+

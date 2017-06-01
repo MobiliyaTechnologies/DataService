@@ -1,0 +1,41 @@
+PiServer7(Data in interval of 15 minutes):
+Make local server to your system say System1.
+Create database same as the PiServer.
+
+Update AppConfig file of Simulator say simulator1
+PiConnectionString  = "data source=ajit-PC\SQLEXPRESS;initial catalog=PiTestCase1;persist security info=True;user id=sa;password=Mobiliya@123"
+
+Update/uncomment code in GetPowerGridView class as per PiServer say piserver7.
+
+
+PiServer8:
+Make local server to another system say System2.
+Create database same as the PiServer.
+
+Update AppConfig file of another Simulator say simulator2
+PiConnectionString  = "data source=KETANK-PC\SQLEXPRESS;initial catalog=PiTestCase1;persist security info=True;user id=sa;password=Mobiliya@123"
+
+Update/uncomment code in GetPowerGridView class as per PiServer say piserver8.
+
+
+Note: This simulator works with the current time same as the real system would be.
+
+This updates/inserts table 'Powergridview','SensorData',and 'Weather'
+
+This simulator based on the assumptions 
+1 university 
+2 campus
+Each campus has 1 PiServers
+Each campus/PiServer has 2 buildings say Chemistry building, Science buidling, Maths building, Physics building.
+Each Buidling has 7 unique powerscouts.
+
+
+So for 2 PiServer we have 28 unique powerscouts and 4 unique buidlings with 2 unique campuses.
+
+
+
+
+
+
+
+
