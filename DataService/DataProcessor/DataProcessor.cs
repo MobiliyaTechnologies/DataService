@@ -29,6 +29,7 @@ namespace DataProcessor
 
         #region PRIVATE_VARIABLES
         System.Timers.Timer processTimer;
+        static double utcConversionTime = 0;
         #endregion
 
         #region PUBLIC METHODS
@@ -36,22 +37,33 @@ namespace DataProcessor
         {
             try
             {
-                if (!((string.IsNullOrEmpty(ConfigurationSettings.PiServer)) || (string.IsNullOrEmpty(ConfigurationSettings.AzureConnectionString)) || (string.IsNullOrEmpty(ConfigurationSettings.StorageConnectionString))
+                if (!((string.IsNullOrEmpty(ConfigurationSettings.PiServer)) || (string.IsNullOrEmpty(ConfigurationSettings.AzureConnectionString))
               ))
                 {
+                    
+                   
                     Console.WriteLine("Init ProcessData");
                     ConnectionManager.Instance().Initialize();
                     Console.WriteLine("Done with Console manager initialization");
-                    BlobStorageManager.Instance().ConfigureBlobStorage();
-                    Console.WriteLine("Done with Blob Storage configuration");
+                    string storageConnectionString = ConfigurationSettings.GetCloudConfigDataModel().BlobStorageURL;
+                    if (!string.IsNullOrEmpty(storageConnectionString))
+                    {
+                        BlobStorageManager.Instance().ConfigureBlobStorage(storageConnectionString);
+                        Console.WriteLine("Done with Blob Storage configuration");
 
-                    string piServer = ConnectionManager.Instance().GetPIServer();
+                        string piServer = ConnectionManager.Instance().GetPIServer();
 
 
-                    Thread piThread = new Thread(() => { ProcessDataByPIServer(piServer); });
-                    piThread.Start();
-                    Thread sensorThread = new Thread(() => { InsertSensorData(piServer); });
-                    sensorThread.Start();
+                        Thread piThread = new Thread(() => { ProcessDataByPIServer(piServer); });
+                        piThread.Start();
+                        //Thread sensorThread = new Thread(() => { InsertSensorData(piServer); });
+                        //sensorThread.Start();
+                    }
+                    else
+                    {
+                        Console.WriteLine("Does not have storage connection string ");
+                    }
+                    
 
                 }
                 else
@@ -72,11 +84,17 @@ namespace DataProcessor
         void ProcessDataByPIServer(string piServerName)
         {
 
+
             while (true)
             {
                 try
                 {
-                    double utcConversionTime = GetAndTimezone();
+                    if (utcConversionTime != GetAndTimezone())
+                    {
+                        utcConversionTime = GetAndTimezone();
+                        ConnectionManager.Instance().UpdateUTCTimeDifference(piServerName, utcConversionTime);
+                    }
+
                     double sleepTimeInMins = 30;
                     //To Do get connection basis of PI server using Connection Manager
                     SqlConnection piConnection = ConnectionManager.Instance().GetPISQLConnection(piServerName);
@@ -89,20 +107,27 @@ namespace DataProcessor
 
 
                     //We need this meterlist, bcoz we going to process data meter by meter
-                    List<string> meterList = new List<string>();
+                    List<string> meterList = null;
                     var meterDetails = getMeterDetails(piServerName);
                     //Need to call this again and again, if any new meter gets added in PI Server.
                     var meterAndBreakerDetailsListFromPI = getMeterAndBreakerDetailsList(piServerName);
-                    if (meterDetails != null && meterDetails.Count != 0)
+                    if (meterAndBreakerDetailsListFromPI != null && meterAndBreakerDetailsListFromPI.Count != 0)
                     {
-                        var metersToInsert = meterAndBreakerDetailsListFromPI.Where(p => !meterDetails.Any(p2 => p2.PowerScout == p.PowerScout)).ToList();
-                        InsertMetersIntoAzure(metersToInsert);
+
+                        meterList = new List<string>();
+                        if (meterDetails != null && meterDetails.Count != 0)
+                        {
+                            var metersToInsert = meterAndBreakerDetailsListFromPI.Where(p => !meterDetails.Any(p2 => p2.PowerScout == p.PowerScout)).ToList();
+                            InsertMetersIntoAzure(metersToInsert);
+                        }
+                        else
+                        {
+                            InsertMetersIntoAzure(meterAndBreakerDetailsListFromPI);
+                        }
+                        meterList = meterAndBreakerDetailsListFromPI.Select(x => x.PowerScout).ToList();
                     }
-                    else
-                    {
-                        InsertMetersIntoAzure(meterAndBreakerDetailsListFromPI);
-                    }
-                    meterList = meterAndBreakerDetailsListFromPI.Select(x => x.PowerScout).ToList();
+
+                    
                     ProcessedDataModel processedDataInfo = BlobStorageManager.Instance().GetLastProcessedData<ProcessedDataModel>(piServerName, Constants.THRESHOLD_METER_STORAGE_FILENAME_PREFIX);
                     if (processedDataInfo == null)
                         processedDataInfo = new ProcessedDataModel { MeterTimestamp = new Dictionary<string, DateTime>() };
@@ -262,16 +287,17 @@ namespace DataProcessor
                         return true;
                     });
 
-                    
+
                     ConnectionManager.Instance().CloseSQLConnection(piConnection);
                     ConnectionManager.Instance().CloseSQLConnection(weatherConnection);
-                    Console.WriteLine("**************Sleeping for "+ (Convert.ToInt32(sleepTimeInMins) * 60 * 1000) + " minutes**************");
+                    Console.WriteLine("**************Sleeping for " + (Convert.ToInt32(sleepTimeInMins) * 60 * 1000) + " minutes**************");
                     //Convert Minutes to millis
                     Thread.Sleep(Convert.ToInt32(sleepTimeInMins) * 60 * 1000);
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("*********Exception Occured ******" + e.Message);
+                    Console.WriteLine("*********Exception Occured Message******" + e.Message);
+                    Console.WriteLine("*********Exception Occured StackTrace******" + e.StackTrace);
 
                 }
             }
@@ -323,7 +349,7 @@ namespace DataProcessor
                 averageData.PiServerName = dataList.ElementAt(0).PiServerName;
 
 
-                string query = "INSERT INTO AzureLiveData VALUES (@AMPS_L1,@AMPS_L2,@AMPS_L3,@AMPS_SYSTEM_AVG,@Breaker_details,@Breaker_label,@Building,@ClassOccupanyRemaining,@ClassOccupiedValue,@TotalClassCapacity,@Daily_electric_cost,@Daily_KWH_System,@isClassOccupied,@KW_L1,@KW_L2,@KW_L3,@Monthly_electric_cost,@Monthly_KWH_System,@PowerScout,@Rated_Amperage,@Pressure,@Relative_humidity,@Rolling_hourly_kwh_system,@Serial_number,@Temperature,@Timestamp,@Type,@Visibility,@Volts_L1_to_neutral,@Volts_L2_to_neutral,@Volts_L3_to_neutral,@kW_System,@days,@time_period,@current_week,@last_week,@current_day,@previous_day,@current_month,@last_month,@PiServerName)";
+                string query = "INSERT INTO LiveData VALUES (@AMPS_L1,@AMPS_L2,@AMPS_L3,@AMPS_SYSTEM_AVG,@Breaker_details,@Breaker_label,@Building,@ClassOccupanyRemaining,@ClassOccupiedValue,@TotalClassCapacity,@Daily_electric_cost,@Daily_KWH_System,@isClassOccupied,@KW_L1,@KW_L2,@KW_L3,@Monthly_electric_cost,@Monthly_KWH_System,@PowerScout,@Rated_Amperage,@Pressure,@Relative_humidity,@Rolling_hourly_kwh_system,@Serial_number,@Temperature,@Timestamp,@Type,@Visibility,@Volts_L1_to_neutral,@Volts_L2_to_neutral,@Volts_L3_to_neutral,@kW_System,@days,@time_period,@current_week,@last_week,@current_day,@previous_day,@current_month,@last_month,@PiServerName)";
                 SqlConnection azureConnection = new SqlConnection(Utils.ConfigurationSettings.AzureConnectionString);
                 azureConnection.Open();
                 SqlCommand cmd = new SqlCommand(query, azureConnection);
@@ -383,7 +409,7 @@ namespace DataProcessor
             }
             catch (Exception ex)
             {
-
+                Console.WriteLine("Exception occured in Update Database method" + ex.Message);
             }
         }
 
@@ -478,7 +504,7 @@ namespace DataProcessor
                 SqlConnection getMeterListConnection = ConnectionManager.Instance().GetPISQLConnection(serverName);
                 ConnectionManager.Instance().OpenSQLConnection(getMeterListConnection);
 
-                SqlCommand cmdMeterList = new SqlCommand("SELECT DISTINCT(PowerScout), [Breaker Details] FROM (SELECT TOP 10000 * FROM PowergridView order by TimeStamp DESC) as a", getMeterListConnection);
+                SqlCommand cmdMeterList = new SqlCommand("SELECT DISTINCT(PowerScout), [Breaker Details] FROM (SELECT TOP 1000 * FROM PowergridView order by TimeStamp DESC) as a", getMeterListConnection);
                 SqlDataReader meterListRawDataReader = cmdMeterList.ExecuteReader();
                 while (meterListRawDataReader.Read())
                 {
@@ -496,7 +522,7 @@ namespace DataProcessor
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Exception occured in get Meter List " + ex.Message);
+                Console.WriteLine("Exception occured in get Meter and Breaker details List " + ex.Message);
                 return meterList;
             }
         }
@@ -510,7 +536,7 @@ namespace DataProcessor
             {
                 azureSQLConnection.ConnectionString = ConfigurationSettings.AzureConnectionString;
                 azureSQLConnection.Open();
-                SqlCommand cmdGetMeters = new SqlCommand("Select DISTINCT(PowerScout) from AzureMeterDetails ", azureSQLConnection);
+                SqlCommand cmdGetMeters = new SqlCommand("Select DISTINCT(PowerScout),PiServerName,Breaker_details from MeterDetails ", azureSQLConnection);
 
                 SqlDataReader meterListDataReader = cmdGetMeters.ExecuteReader();
 
@@ -520,10 +546,10 @@ namespace DataProcessor
 
                     if (meterListDataReader["PowerScout"] != DBNull.Value)
                         meter.PowerScout = meterListDataReader["PowerScout"].ToString();
-                    //if (meterListDataReader["Breaker Details"] != DBNull.Value)
-                    //    meter.Breaker_details = meterListDataReader["Breaker Details"].ToString();
-                    //if (meterListDataReader["PiServerName"] != DBNull.Value)
-                    //    meter.PiServerName = meterListDataReader["PiServerName"].ToString();
+                    if (meterListDataReader["Breaker_details"] != DBNull.Value)
+                        meter.Breaker_details = meterListDataReader["Breaker_details"].ToString();
+                    if (meterListDataReader["PiServerName"] != DBNull.Value)
+                        meter.PiServerName = meterListDataReader["PiServerName"].ToString();
 
                     meterList.Add(meter);
                 }

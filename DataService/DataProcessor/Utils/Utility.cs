@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using DataProcessor.DataModels;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -54,22 +55,23 @@ namespace DataProcessor.Utils
 
         public static void SendNotification(string title, string body)
         {
-            if (!((string.IsNullOrEmpty(ConfigurationSettings.ApplicationId)) || (string.IsNullOrEmpty(ConfigurationSettings.SenderId)) || (string.IsNullOrEmpty(ConfigurationSettings.Receiver))
-                || (string.IsNullOrEmpty(ConfigurationSettings.ClickAction)) || (string.IsNullOrEmpty(ConfigurationSettings.Icon)) || (string.IsNullOrEmpty(ConfigurationSettings.FCMURL))))
+            CloudConfigurationSettingsModel cloudConfig = ConfigurationSettings.GetCloudConfigDataModel();
+            if (!((string.IsNullOrEmpty(cloudConfig.ApplicationId)) || (string.IsNullOrEmpty(cloudConfig.NotificationSender)) || (string.IsNullOrEmpty(cloudConfig.NotificationReceiver))
+                || (string.IsNullOrEmpty(cloudConfig.ClickAction))  || (string.IsNullOrEmpty(cloudConfig.FCMURL))))
             {
                 try
                 {
                     //var applicationID = "AAAAGQBSH1c:APA91bEcYFZQMez7DyNTgphhxk1Sw4uKgss0xW7qBqiMX9QBHPNeIItIrw8VhvCJVWi8WUGUMPdRrx64P82lUtzmPUdvKFKYdr_UJHQl6lnWrXeK0J6-QHZaqkhsAKw1J3TwUievGRA2";
-                    var applicationID = ConfigurationSettings.ApplicationId;
+                    var applicationID = cloudConfig.ApplicationId;
 
                     //var senderId = "107379564375";
-                    var senderId = ConfigurationSettings.SenderId;
+                    var senderId = cloudConfig.NotificationSender;
 
                     //string receiver = "/topics/Alerts";
-                    string receiver = ConfigurationSettings.Receiver;
+                    string receiver = cloudConfig.NotificationReceiver;
 
                     //WebRequest tRequest = WebRequest.Create("https://fcm.googleapis.com/fcm/send");
-                    WebRequest tRequest = WebRequest.Create(ConfigurationSettings.FCMURL);
+                    WebRequest tRequest = WebRequest.Create(cloudConfig.FCMURL);
                     tRequest.Method = "post";
                     tRequest.ContentType = "application/json";
                     var data = new
@@ -80,8 +82,7 @@ namespace DataProcessor.Utils
                         {
                             body = body,
                             title = title,
-                            click_action = ConfigurationSettings.ClickAction,
-                            icon = ConfigurationSettings.Icon,
+                            click_action = cloudConfig.ClickAction,
                             sound = "default"
                             //  }
                         },
