@@ -36,9 +36,9 @@ namespace DataProcessor.Managers
         #endregion
 
         #region PUBLIC METHODS
-        public void ConfigureBlobStorage()
+        public void ConfigureBlobStorage(string storageConnectionString)
         {
-            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(ConfigurationSettings.StorageConnectionString);
+            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(storageConnectionString);
             blobClient = storageAccount.CreateCloudBlobClient();
         }
 

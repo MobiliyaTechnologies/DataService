@@ -87,7 +87,7 @@ namespace DataProcessor.Processor
                         SqlConnection azureSQLConnection = new SqlConnection();
                         azureSQLConnection.ConnectionString = ConfigurationSettings.AzureConnectionString;
                         azureSQLConnection.Open();
-                        SqlCommand updateAzureDBCommand = new SqlCommand("INSERT INTO SensorAzureLiveData (Sensor_Id,Temperature,Brightness,Humidity,Timestamp,PiServerName) VALUES (@SensorId,@Temperature,@Brightness,@Humidity,@Timestamp,@PiServerName)", azureSQLConnection);
+                        SqlCommand updateAzureDBCommand = new SqlCommand("INSERT INTO SensorLiveData (Sensor_Id,Temperature,Brightness,Humidity,Timestamp,PiServerName) VALUES (@SensorId,@Temperature,@Brightness,@Humidity,@Timestamp,@PiServerName)", azureSQLConnection);
                         updateAzureDBCommand.Parameters.Add(new SqlParameter("@SensorId", sensorDetail.Sensor_Id));
                         updateAzureDBCommand.Parameters.Add(new SqlParameter("@Temperature", piSensorDataReader["Temperature"]));
                         updateAzureDBCommand.Parameters.Add(new SqlParameter("@Brightness", piSensorDataReader["Brightness"]));
@@ -126,7 +126,7 @@ namespace DataProcessor.Processor
                 SqlConnection azureSQLConnection = new SqlConnection();
                 azureSQLConnection.ConnectionString = ConfigurationSettings.AzureConnectionString;
                 azureSQLConnection.Open();
-                SqlCommand cmdInsertSensors = new SqlCommand("INSERT INTO SensorAzureMaster(Sensor_Name, PiServerName) VALUES (@SensorName,@PiServerName)", azureSQLConnection);
+                SqlCommand cmdInsertSensors = new SqlCommand("INSERT INTO SensorMaster(Sensor_Name, PiServerName) VALUES (@SensorName,@PiServerName)", azureSQLConnection);
                 cmdInsertSensors.Parameters.Add(new SqlParameter("@SensorName", sensorName));
                 cmdInsertSensors.Parameters.Add(new SqlParameter("@PiServerName", piServerName));
                 cmdInsertSensors.ExecuteNonQuery();
@@ -151,7 +151,7 @@ namespace DataProcessor.Processor
                 SqlConnection azureSQLConnection = new SqlConnection();
                 azureSQLConnection.ConnectionString = ConfigurationSettings.AzureConnectionString;
                 azureSQLConnection.Open();
-                SqlCommand cmdInsertSensors = new SqlCommand("INSERT INTO AzureAlerts(Sensor_Log_Id,Sensor_Id,Alert_Type,Description,Timestamp,Is_Acknowledged, PiServerName) VALUES (@Sensor_Log_Id,@Sensor_Id,@Alert_Type,@Description,@Timestamp,@Is_Acknowledged,@PiServerName)", azureSQLConnection);
+                SqlCommand cmdInsertSensors = new SqlCommand("INSERT INTO Alerts(Sensor_Log_Id,Sensor_Id,Alert_Type,Description,Timestamp,Is_Acknowledged, PiServerName) VALUES (@Sensor_Log_Id,@Sensor_Id,@Alert_Type,@Description,@Timestamp,@Is_Acknowledged,@PiServerName)", azureSQLConnection);
                 cmdInsertSensors.Parameters.Add(new SqlParameter("@Sensor_Log_Id", sensorLogId));
                 cmdInsertSensors.Parameters.Add(new SqlParameter("@Sensor_Id", sensor_Id));
                 cmdInsertSensors.Parameters.Add(new SqlParameter("@Alert_Type", alertType));
@@ -175,7 +175,7 @@ namespace DataProcessor.Processor
             {
                 azureSQLConnection.ConnectionString = ConfigurationSettings.AzureConnectionString;
                 azureSQLConnection.Open();
-                SqlCommand cmdGetSensors = new SqlCommand("Select * from SensorAzureMaster where PiServerName = @PiServerName", azureSQLConnection);
+                SqlCommand cmdGetSensors = new SqlCommand("Select * from SensorMaster where PiServerName = @PiServerName", azureSQLConnection);
                 cmdGetSensors.Parameters.Add(new SqlParameter("@PiserverName", piServerName));
                 SqlDataReader sensorListDataReader = cmdGetSensors.ExecuteReader();
 

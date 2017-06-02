@@ -44,31 +44,8 @@ namespace DataProcessor.Managers
         {
             Console.WriteLine("In Initialize");
             PIServer = ConfigurationSettings.PiServer;
-            Console.WriteLine("Get Pi server Settings :: "+ PIServer);
+            Console.WriteLine("Get Pi server Settings :: " + PIServer);
             DatabaseInfo = new DatabaseInfo();
-
-            //To Do
-            //Looping pi server list and call get db connection string api and update DatabaseInfoList  with the same
-            //Going to loop Pi server List
-            //foreach (string server in PIServerList)
-            //{
-            //    Console.WriteLine("In Loop server :: "+server);
-            //    PIConfigurationRequestModel piConfigRequestModel = new PIConfigurationRequestModel()
-            //    {
-            //        PiServerName = server
-            //    };
-            //    string requestJson = JsonConvert.SerializeObject(piConfigRequestModel);
-            //    Console.WriteLine("Request Json ::"+requestJson);
-            //    string responseJson = HttpManager.Instance().GetPiServerConfigurationByName(requestJson).Result;
-            //    Console.WriteLine("Response Json ::" + responseJson);
-            //    if (responseJson != null)
-            //    {
-            //        availableServers.Add(server);
-            //        PIConfigurationResponseModel piConfigResponseModel = JsonConvert.DeserializeObject<PIConfigurationResponseModel>(responseJson);
-            //        DatabaseInfoList.Add(new DatabaseInfo() { Name = server, ConnectionString = piConfigResponseModel.PiServerURL });
-            //    }
-            //}
-
             string connectionString = GetConnectionStringFromDB(PIServer);
             if (!string.IsNullOrEmpty(connectionString))
             {
@@ -78,12 +55,85 @@ namespace DataProcessor.Managers
             {
                 Console.WriteLine("Failed to fetch connection string from DB for PI Server = " + PIServer);
             }
+
+            ConfigurationSettings.SetCloudConfigDataModel(GeCloudConfigurationSettings(PIServer));
         }
 
         public string GetPIServer()
         {
             return PIServer;
         }
+
+        private CloudConfigurationSettingsModel GeCloudConfigurationSettings(string piServerName)
+        {
+            CloudConfigurationSettingsModel settingModel = new CloudConfigurationSettingsModel();
+            try
+            {
+                SqlConnection getConfigurationConnection = new SqlConnection(ConfigurationSettings.AzureConnectionString);
+                getConfigurationConnection.Open();
+                //SqlCommand sqlCommandConfigurationList = new SqlCommand("SELECT ApplicationId,SenderId,Receiver,FCMURL,ClickAction,Icon FROM Configuration", getConfigurationListConnection);
+                SqlCommand sqlCommandConfiguration = new SqlCommand("Select ConfigurationKey,ConfigurationValue from ApplicationConfigurationEntry where ApplicationConfigurationId = (select id from applicationconfiguration where ConfigurationType = @Firebase)", getConfigurationConnection);
+                sqlCommandConfiguration.Parameters.Add(new SqlParameter("@Firebase", Constants.CLOUD_CONFIGURATION_TYPE_FIREBASE));
+                SqlDataReader configurationsqlDataReader = sqlCommandConfiguration.ExecuteReader();
+
+                while (configurationsqlDataReader.Read())
+                {
+                    switch (configurationsqlDataReader["ConfigurationKey"].ToString())
+                    {
+
+                        case Constants.CLOUD_CONFIGURATION_NOTIFICATIONAUTHORIZATION_Key:
+
+                            { settingModel.ApplicationId = configurationsqlDataReader["ConfigurationValue"].ToString(); }
+                            break;
+                        case Constants.CLOUD_CONFIGURATION_FIREBASE_API_KEY:
+
+                            { settingModel.ApiKey = configurationsqlDataReader["ConfigurationValue"].ToString(); }
+                            break;
+                        case Constants.CLOUD_CONFIGURATION_NOTIFICATION_SENDER_KEY:
+
+                            { settingModel.NotificationSender = configurationsqlDataReader["ConfigurationValue"].ToString(); }
+                            break;
+                        case Constants.CLOUD_CONFIGURATION_NOTIFICATION_RECEIVER_KEY:
+
+                            { settingModel.NotificationReceiver = configurationsqlDataReader["ConfigurationValue"].ToString(); }
+                            break;
+                        case Constants.CLOUD_CONFIGURATION_NOTIFICATION_CLICK_ACTION_KEY:
+
+                            { settingModel.ClickAction = configurationsqlDataReader["ConfigurationValue"].ToString(); }
+                            break;
+                    }
+
+                }
+                settingModel.FCMURL = Constants.CLOUD_CONFIGURATION_FIREBASE_SEND_URL_KEY;
+                configurationsqlDataReader.Close();
+
+                //for blob storage configuration
+                sqlCommandConfiguration = new SqlCommand("Select ConfigurationKey,ConfigurationValue from ApplicationConfigurationEntry where ApplicationConfigurationId = (select id from applicationconfiguration where ConfigurationType= @BlobStorage )", getConfigurationConnection);
+                sqlCommandConfiguration.Parameters.Add(new SqlParameter("@BlobStorage", Constants.CLOUD_CONFIGURATION_TYPE_BLOB_STORAGE));
+
+                configurationsqlDataReader = sqlCommandConfiguration.ExecuteReader();
+                while (configurationsqlDataReader.Read())
+                {
+
+                    if (configurationsqlDataReader["ConfigurationKey"].ToString() == Constants.CLOUD_CONFIGURATION_STORAGE_CONNECTION_STRING_KEY)
+                    {
+                        settingModel.BlobStorageURL = configurationsqlDataReader["ConfigurationValue"].ToString();
+                    }
+                }
+
+                ConnectionManager.Instance().CloseSQLConnection(getConfigurationConnection);
+                return settingModel;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception occured in get cloud Configuration settings " + ex.Message);
+                return settingModel;
+            }
+        }
+
+
+
+     
 
         /// <summary>
         /// Method accepts server name and make a new object of sql connection with connection string as per server name.
@@ -112,7 +162,7 @@ namespace DataProcessor.Managers
 
         string GetPISQLConnectionString(string serverName)
         {
-            
+
             return DatabaseInfo.ConnectionString;
         }
 
@@ -127,10 +177,30 @@ namespace DataProcessor.Managers
             SqlDataReader reader = cmd.ExecuteReader();
             while (reader.Read()) //Runs only once
             {
-                connectionString =  Convert.ToString(reader[0]);
+                connectionString = Convert.ToString(reader[0]);
             }
             azureConnection.Close();
             return connectionString;
+        }
+
+        public void UpdateUTCTimeDifference(string serverName, double utcConversionTime)
+        {
+            try
+            {
+                SqlConnection sqlConnection = new SqlConnection();
+                sqlConnection.ConnectionString = ConfigurationSettings.AzureConnectionString;
+                sqlConnection.Open();
+                SqlCommand sqlCommandUpdateUTCConversionTime = new SqlCommand("Update PiServer set UTCConversionTime = @utcConversionTime where PiServerName = @serverName", sqlConnection);
+                sqlCommandUpdateUTCConversionTime.Parameters.Add(new SqlParameter("@utcConversionTime", utcConversionTime));
+                sqlCommandUpdateUTCConversionTime.Parameters.Add(new SqlParameter("@serverName", serverName));
+
+                sqlCommandUpdateUTCConversionTime.ExecuteNonQuery();
+                sqlConnection.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception occured in Update UTC Time Difference ", ex.Message);
+            }
         }
 
 
