@@ -127,6 +127,11 @@ namespace DataProcessor
                         ConnectionManager.Instance().UpdateUTCTimeDifference(piServerName, utcConversionTime);
                     }
 
+                    //Class Schedule File initialization
+                    bool isClassScheduleFileExist = ClassScheduleManager.Instance().ReInitialize(piServerName);
+                    ////
+
+
                     double sleepTimeInMins = 30;
                     //To Do get connection basis of PI server using Connection Manager
                     SqlConnection piConnection = ConnectionManager.Instance().GetPISQLConnection(piServerName);
@@ -210,8 +215,8 @@ namespace DataProcessor
                             utcDate = utcDate.AddHours(utcConversionTime);
                             var utcSQLFormattedDate = utcDate.ToString(Constants.DATE_TIME_FORMAT);
 
-                            ClassScheduleManager.Instance().ReInitialize(piServerName);
-                            ClassOccupanyDetails classDetails = ClassScheduleManager.Instance().ProcessDataRow(serialNumber, utcDate);
+                            
+                           
 
                             if (pireader["Id"] != DBNull.Value)
                                 data.Id = Convert.ToInt32(pireader["Id"]);
@@ -230,14 +235,17 @@ namespace DataProcessor
                             if (pireader["Building"] != DBNull.Value)
                                 data.Building = Convert.ToString(pireader["Building"]);
 
+                            if(isClassScheduleFileExist)
+                            {
+                                ClassOccupanyDetails classDetails = ClassScheduleManager.Instance().ProcessDataRow(serialNumber, utcDate);
+                                data.ClassOccupanyRemaining = classDetails.ClassOccupanyRemaining;
 
-                            data.ClassOccupanyRemaining = classDetails.ClassOccupanyRemaining;
+                                data.ClassOccupiedValue = classDetails.ClassOccupiedValue;
 
-                            data.ClassOccupiedValue = classDetails.ClassOccupiedValue;
+                                data.TotalClassCapacity = classDetails.ClassTotalCapacity;
 
-                            data.TotalClassCapacity = classDetails.ClassTotalCapacity;
-
-                            data.isClassOccupied = classDetails.IsClassOccupied;
+                                data.isClassOccupied = classDetails.IsClassOccupied;
+                            }
 
                             if (pireader["Daily Electric Cost"] != DBNull.Value)
                                 data.Daily_electric_cost = Convert.ToDouble(pireader["Daily Electric Cost"]);
@@ -351,10 +359,12 @@ namespace DataProcessor
                 averageData.Breaker_details = dataList[0].Breaker_details;
                 averageData.Breaker_label = dataList[0].Breaker_label;
                 averageData.Building = dataList[0].Building;
-                averageData.ClassOccupanyRemaining = (int)dataList.Average(data => data.ClassOccupanyRemaining);
-                averageData.ClassOccupiedValue = (int)dataList.Average(data => data.ClassOccupiedValue);
-                averageData.TotalClassCapacity = (int)dataList.Average(data => data.TotalClassCapacity);
-                averageData.isClassOccupied = (int)dataList.Average(data => data.isClassOccupied);
+                //If class schedule file doesn't exist, below parameters set to a default value 0
+                averageData.ClassOccupanyRemaining = (!dataList.Any(x => x.ClassOccupanyRemaining == null)) ? ((int)dataList.Average(data => data.ClassOccupanyRemaining)) : 0;
+                averageData.ClassOccupiedValue = (!dataList.Any(x => x.ClassOccupiedValue == null)) ? ((int)dataList.Average(data => data.ClassOccupiedValue)) : 0;
+                averageData.TotalClassCapacity = (!dataList.Any(x => x.TotalClassCapacity == null)) ? ((int)dataList.Average(data => data.TotalClassCapacity)) : 0;
+                averageData.isClassOccupied = (!dataList.Any(x => x.isClassOccupied == null)) ? ((int)dataList.Average(data => data.isClassOccupied)) : 0;
+                //
                 averageData.Daily_electric_cost = dataList.Max(data => data.Daily_electric_cost);
                 averageData.Daily_KWH_System = dataList.Max(data => data.Daily_KWH_System);
                 averageData.KW_L1 = dataList.Average(data => data.KW_L1);
@@ -381,7 +391,7 @@ namespace DataProcessor
                 averageData.PiServerName = dataList.ElementAt(0).PiServerName;
 
 
-                string query = "INSERT INTO LiveData VALUES (@AMPS_L1,@AMPS_L2,@AMPS_L3,@AMPS_SYSTEM_AVG,@Breaker_details,@Breaker_label,@Building,@ClassOccupanyRemaining,@ClassOccupiedValue,@TotalClassCapacity,@Daily_electric_cost,@Daily_KWH_System,@isClassOccupied,@KW_L1,@KW_L2,@KW_L3,@Monthly_electric_cost,@Monthly_KWH_System,@PowerScout,@Rated_Amperage,@Pressure,@Relative_humidity,@Rolling_hourly_kwh_system,@Serial_number,@Temperature,@Timestamp,@Type,@Visibility,@Volts_L1_to_neutral,@Volts_L2_to_neutral,@Volts_L3_to_neutral,@kW_System,@days,@time_period,@current_week,@last_week,@current_day,@previous_day,@current_month,@last_month,@PiServerName)";
+                string query = "INSERT INTO LiveData VALUES (@AMPS_L1,@AMPS_L2,@AMPS_L3,@AMPS_SYSTEM_AVG,@Breaker_details,@Breaker_label,@Building,@ClassOccupanyRemaining,@ClassOccupiedValue,@TotalClassCapacity,@Daily_electric_cost,@Daily_KWH_System,@isClassOccupied,@KW_L1,@KW_L2,@KW_L3,@Monthly_electric_cost,@Monthly_KWH_System,@PowerScout,@Rated_Amperage,@Pressure,@Relative_humidity,@Rolling_hourly_kwh_system,@Serial_number,@Temperature,@Timestamp,@Type,@Visibility,@Volts_L1_to_neutral,@Volts_L2_to_neutral,@Volts_L3_to_neutral,@kW_System,@days,@time_period,@PiServerName)";
                 SqlConnection azureConnection = new SqlConnection(Utils.ConfigurationSettings.AzureConnectionString);
                 azureConnection.Open();
                 SqlCommand cmd = new SqlCommand(query, azureConnection);
@@ -419,12 +429,6 @@ namespace DataProcessor
                 cmd.Parameters.Add(new SqlParameter("kW_System", averageData.kW_System));
                 cmd.Parameters.Add(new SqlParameter("days", averageData.days));
                 cmd.Parameters.Add(new SqlParameter("time_period", averageData.time_period));
-                cmd.Parameters.Add(new SqlParameter("current_week", "1990-01-01 00:00:00.000"));
-                cmd.Parameters.Add(new SqlParameter("last_week", "1990-01-01 00:00:00.000"));
-                cmd.Parameters.Add(new SqlParameter("current_day", "1990-01-01 00:00:00.000"));
-                cmd.Parameters.Add(new SqlParameter("previous_day", "1990-01-01 00:00:00.000"));
-                cmd.Parameters.Add(new SqlParameter("current_month", "1990-01-01 00:00:00.000"));
-                cmd.Parameters.Add(new SqlParameter("last_month", "1990-01-01 00:00:00.000"));
                 cmd.Parameters.Add(new SqlParameter("PiServerName", averageData.PiServerName));
                 cmd.ExecuteNonQuery();
                 azureConnection.Close();
