@@ -17,6 +17,12 @@ namespace DataProcessor.Utils
 
         public static readonly string PiServer = GetConfigData("PiServer");
 
+        public static readonly string StorageConnectionString = GetConfigData("StorageConnectionString");
+
+        public static readonly string PiServerConnectionString = GetConfigData("PiServerConnectionString");
+
+        
+
         static CloudConfigurationSettingsModel cloudConfiguration = new CloudConfigurationSettingsModel();
 
         private static string GetConfigData(string key)

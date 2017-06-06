@@ -53,12 +53,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DataModels\ApiModels\PIConfigurationDetails.cs" />
     <Compile Include="DataModels\AzureDataModel.cs" />
     <Compile Include="DataModels\ClassOccupanyDetails.cs" />
     <Compile Include="DataModels\CloudConfigurationSettingsModel.cs" />
     <Compile Include="DataModels\DatabaseInfo.cs" />
     <Compile Include="DataModels\LocalDataModel.cs" />
+    <Compile Include="DataModels\PIConfigurationInfoModel.cs" />
     <Compile Include="DataModels\PowerScoutModel.cs" />
     <Compile Include="DataModels\SensorMasterModel.cs" />
     <Compile Include="DataModels\WeatherDetails.cs" />

@@ -24,7 +24,8 @@ namespace DataProcessor.Utils
         public const string CLOUD_CONFIGURATION_NOTIFICATION_RECEIVER_KEY = "NotificationReceiver";
         public const string CLOUD_CONFIGURATION_NOTIFICATIONAUTHORIZATION_Key = "NotificationAuthorizationKey";
         public const string CLOUD_CONFIGURATION_NOTIFICATION_CLICK_ACTION_KEY = "NotificationClickAction";
-        public const string CLOUD_CONFIGURATION_FIREBASE_SEND_URL_KEY = "https://fcm.googleapis.com/fcm/send";
+        public const string CLOUD_CONFIGURATION_FIREBASE_SEND_URL_VALUE = "https://fcm.googleapis.com/fcm/send";
+        public const string CLOUD_CONFIGURATION_FIREBASE_ICON_VALUE = "./Assets/logo.png";
         public const string CLOUD_CONFIGURATION_STORAGE_CONNECTION_STRING_KEY = "BlobStorageConnectionString";
     }
 }

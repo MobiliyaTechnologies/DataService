@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -30,26 +31,54 @@ namespace DataProcessor
         #region PRIVATE_VARIABLES
         System.Timers.Timer processTimer;
         static double utcConversionTime = 0;
+
+
+
         #endregion
+
+        public DataProcessor(EventLog log)
+        {
+            Utility.InitLog(log);
+        }
 
         #region PUBLIC METHODS
         public void ProcessData()
         {
             try
             {
-                if (!((string.IsNullOrEmpty(ConfigurationSettings.PiServer)) || (string.IsNullOrEmpty(ConfigurationSettings.AzureConnectionString))
+                if (!((string.IsNullOrEmpty(ConfigurationSettings.PiServer)) || (string.IsNullOrEmpty(ConfigurationSettings.AzureConnectionString)) || (string.IsNullOrEmpty(ConfigurationSettings.PiServerConnectionString))
               ))
                 {
-                    
-                   
+
+
                     Console.WriteLine("Init ProcessData");
+                    Utility.Log("Init ProcessData");
+                    if (utcConversionTime != GetAndTimezone())
+                    {
+                        utcConversionTime = GetAndTimezone();
+                        PIConfigurationInfoModel piConfig = new PIConfigurationInfoModel();
+                        string serverName = ConfigurationSettings.PiServer;
+                        piConfig.PiServerDesc = serverName;
+                        piConfig.PiServerName = serverName;
+                        piConfig.PiServerURL = ConfigurationSettings.PiServerConnectionString;
+                        piConfig.UTCConversionTime = utcConversionTime;
+                        piConfig.CreatedOn = DateTime.UtcNow;
+                        ConnectionManager.Instance().InserPIConfigurationDetailsToDB(piConfig);
+                    }
                     ConnectionManager.Instance().Initialize();
                     Console.WriteLine("Done with Console manager initialization");
+
                     string storageConnectionString = ConfigurationSettings.GetCloudConfigDataModel().BlobStorageURL;
+                    //patch for now
+
+                    storageConnectionString = ConfigurationSettings.StorageConnectionString;
+
+                    //
                     if (!string.IsNullOrEmpty(storageConnectionString))
                     {
                         BlobStorageManager.Instance().ConfigureBlobStorage(storageConnectionString);
                         Console.WriteLine("Done with Blob Storage configuration");
+                        Utility.Log("Done with Console manager initialization");
 
                         string piServer = ConnectionManager.Instance().GetPIServer();
 
@@ -61,20 +90,23 @@ namespace DataProcessor
                     }
                     else
                     {
-                        Console.WriteLine("Does not have storage connection string ");
+                        Utility.Log("Does not have storage connection string ");
                     }
-                    
+
 
                 }
                 else
                 {
                     Console.WriteLine("Doesn't have sufficient data in app config for connection");
+                    Console.ReadLine();
+                    Utility.Log("Doesn't have sufficient data in app config for connection");
                 }
             }
             catch (Exception e)
             {
 
                 Console.WriteLine("Error occured in processData" + e.Message);
+                Utility.Log("Error occured in processData" + e.Message);
             }
         }
 
@@ -118,16 +150,16 @@ namespace DataProcessor
                         if (meterDetails != null && meterDetails.Count != 0)
                         {
                             var metersToInsert = meterAndBreakerDetailsListFromPI.Where(p => !meterDetails.Any(p2 => p2.PowerScout == p.PowerScout)).ToList();
-                            InsertMetersIntoAzure(metersToInsert);
+                            InsertMetersIntoAzure(metersToInsert, utcConversionTime);
                         }
                         else
                         {
-                            InsertMetersIntoAzure(meterAndBreakerDetailsListFromPI);
+                            InsertMetersIntoAzure(meterAndBreakerDetailsListFromPI, utcConversionTime);
                         }
                         meterList = meterAndBreakerDetailsListFromPI.Select(x => x.PowerScout).ToList();
                     }
 
-                    
+
                     ProcessedDataModel processedDataInfo = BlobStorageManager.Instance().GetLastProcessedData<ProcessedDataModel>(piServerName, Constants.THRESHOLD_METER_STORAGE_FILENAME_PREFIX);
                     if (processedDataInfo == null)
                         processedDataInfo = new ProcessedDataModel { MeterTimestamp = new Dictionary<string, DateTime>() };
@@ -290,7 +322,7 @@ namespace DataProcessor
 
                     ConnectionManager.Instance().CloseSQLConnection(piConnection);
                     ConnectionManager.Instance().CloseSQLConnection(weatherConnection);
-                    Console.WriteLine("**************Sleeping for " + (Convert.ToInt32(sleepTimeInMins) * 60 * 1000) + " minutes**************");
+                    Utility.Log("**************Sleeping for " + (Convert.ToInt32(sleepTimeInMins) * 60 * 1000) + " Millis**************");
                     //Convert Minutes to millis
                     Thread.Sleep(Convert.ToInt32(sleepTimeInMins) * 60 * 1000);
                 }
@@ -298,7 +330,7 @@ namespace DataProcessor
                 {
                     Console.WriteLine("*********Exception Occured Message******" + e.Message);
                     Console.WriteLine("*********Exception Occured StackTrace******" + e.StackTrace);
-
+                    Utility.Log("Exception Occured :: ProcessDataByPiServer()" + e.Message);
                 }
             }
         }
@@ -409,7 +441,7 @@ namespace DataProcessor
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Exception occured in Update Database method" + ex.Message);
+                Utility.Log("Exception occured in Update Database method" + ex.Message);
             }
         }
 
@@ -504,7 +536,7 @@ namespace DataProcessor
                 SqlConnection getMeterListConnection = ConnectionManager.Instance().GetPISQLConnection(serverName);
                 ConnectionManager.Instance().OpenSQLConnection(getMeterListConnection);
 
-                SqlCommand cmdMeterList = new SqlCommand("SELECT DISTINCT(PowerScout), [Breaker Details] FROM (SELECT TOP 1000 * FROM PowergridView order by TimeStamp DESC) as a", getMeterListConnection);
+                SqlCommand cmdMeterList = new SqlCommand("SELECT DISTINCT(PowerScout), [Breaker Details],[Building] FROM (SELECT TOP 1000 * FROM PowergridView order by TimeStamp DESC) as a", getMeterListConnection);
                 SqlDataReader meterListRawDataReader = cmdMeterList.ExecuteReader();
                 while (meterListRawDataReader.Read())
                 {
@@ -513,6 +545,7 @@ namespace DataProcessor
                         {
                             PowerScout = meterListRawDataReader["PowerScout"].ToString(),
                             Breaker_details = meterListRawDataReader["Breaker Details"].ToString(),
+                            BuildingName = meterListRawDataReader["Building"].ToString(),
                             PiServerName = serverName
                         }
                        );
@@ -522,7 +555,7 @@ namespace DataProcessor
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Exception occured in get Meter and Breaker details List " + ex.Message);
+                Utility.Log("Exception occured in get Meter and Breaker details List " + ex.Message);
                 return meterList;
             }
         }
@@ -536,7 +569,7 @@ namespace DataProcessor
             {
                 azureSQLConnection.ConnectionString = ConfigurationSettings.AzureConnectionString;
                 azureSQLConnection.Open();
-                SqlCommand cmdGetMeters = new SqlCommand("Select DISTINCT(PowerScout),PiServerName,Breaker_details from MeterDetails ", azureSQLConnection);
+                SqlCommand cmdGetMeters = new SqlCommand("Select DISTINCT(PowerScout),PiServerName,Breaker_details,UTCConversionTime from MeterDetails ", azureSQLConnection);
 
                 SqlDataReader meterListDataReader = cmdGetMeters.ExecuteReader();
 
@@ -550,12 +583,15 @@ namespace DataProcessor
                         meter.Breaker_details = meterListDataReader["Breaker_details"].ToString();
                     if (meterListDataReader["PiServerName"] != DBNull.Value)
                         meter.PiServerName = meterListDataReader["PiServerName"].ToString();
+                    if (meterListDataReader["UTCConversionTime"] != DBNull.Value)
+                        meter.UTCConversionTime = Convert.ToDouble(meterListDataReader["UTCConversionTime"]);
 
                     meterList.Add(meter);
                 }
             }
             catch (Exception e)
             {
+                Utility.Log("Exception Occured getMeterDetails()" + e.Message);
                 throw e;
             }
             finally
@@ -654,7 +690,7 @@ namespace DataProcessor
 
 
 
-        void InsertMetersIntoAzure(List<MeterInfoModel> meterList)
+        void InsertMetersIntoAzure(List<MeterInfoModel> meterList, double UTCConversionDifference)
         {
             try
             {
@@ -664,17 +700,54 @@ namespace DataProcessor
                     SqlConnection azureSQLConnection = new SqlConnection();
                     azureSQLConnection.ConnectionString = ConfigurationSettings.AzureConnectionString;
                     azureSQLConnection.Open();
-                    SqlCommand cmdInsertMeters = new SqlCommand("INSERT INTO AzureMeterDetails(PowerScout,Breaker_details,PiServerName) VALUES (@PowerScout,@Breaker_details,@PiServerName)", azureSQLConnection);
-                    cmdInsertMeters.Parameters.Add(new SqlParameter("@PowerScout", meter.PowerScout));
-                    cmdInsertMeters.Parameters.Add(new SqlParameter("@Breaker_details", meter.Breaker_details));
-                    cmdInsertMeters.Parameters.Add(new SqlParameter("@PiServerName", meter.PiServerName));
-                    cmdInsertMeters.ExecuteNonQuery();
+                    int buildingId = 0;
+
+                    //if exist building name in building table
+                    //insert this building into building table
+                    string query = " IF NOT EXISTS(SELECT * FROM[dbo].[Building] WHERE [BuildingName] = @BuildingName) BEGIN INSERT INTO [dbo].[Building]([BuildingName]) OUTPUT INSERTED.[BuildingID] VALUES (@BuildingName) END";
+                    SqlCommand getBuildingIdCmd = new SqlCommand(query, azureSQLConnection);
+                    getBuildingIdCmd.Parameters.Add(new SqlParameter("@BuildingName", meter.BuildingName));
+                    SqlDataReader result = getBuildingIdCmd.ExecuteReader();
+                    while (result.Read()) //Runs only once
+                    {
+                        buildingId = Convert.ToInt32(result[0]);
+                    }
+                    result.Close();
+                    if (buildingId == 0)
+                    {
+                        string getBuildingIDQuery = "Select [BuildingID] from [dbo].[Building] where BuildingName = @BuildingName";
+                        SqlCommand getBuildingId = new SqlCommand(getBuildingIDQuery, azureSQLConnection);
+                        getBuildingId.Parameters.Add(new SqlParameter("@BuildingName", meter.BuildingName));
+                        SqlDataReader buildingIdReader = getBuildingId.ExecuteReader();
+                        while (buildingIdReader.Read()) //Runs only once
+                        {
+                            buildingId = Convert.ToInt32(buildingIdReader[0]);
+                        }
+                        buildingIdReader.Close();
+                    }
+                    if (buildingId != 0)
+                    {
+                        meter.BuildingId = buildingId;
+                        meter.UTCConversionTime = UTCConversionDifference;
+                        SqlCommand cmdInsertMeters = new SqlCommand("INSERT INTO MeterDetails(PowerScout,Breaker_details,PiServerName,UTCConversionTime,BuildingId) VALUES (@PowerScout,@Breaker_details,@PiServerName,@UTCConversionTime,@BuildingId)", azureSQLConnection);
+                        cmdInsertMeters.Parameters.Add(new SqlParameter("@PowerScout", meter.PowerScout));
+                        cmdInsertMeters.Parameters.Add(new SqlParameter("@Breaker_details", meter.Breaker_details));
+                        cmdInsertMeters.Parameters.Add(new SqlParameter("@PiServerName", meter.PiServerName));
+                        cmdInsertMeters.Parameters.Add(new SqlParameter("@UTCConversionTime", meter.UTCConversionTime));
+                        cmdInsertMeters.Parameters.Add(new SqlParameter("@BuildingId", meter.BuildingId));
+                        cmdInsertMeters.ExecuteNonQuery();
+                    }
+                    else
+                    {
+                        Utility.Log("InsertMetersIntoAzure() Building iD is 0 for meter :: " + meter.PowerScout);
+                    }
                     azureSQLConnection.Close();
+
                 }
             }
             catch (Exception e)
             {
-
+                Utility.Log("Exception Occured : InsertMetersIntoAzure()" + e.Message);
             }
         }
         public double GetAndTimezone()
