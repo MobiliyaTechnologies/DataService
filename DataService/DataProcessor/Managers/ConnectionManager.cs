@@ -1,5 +1,4 @@
 ﻿using DataProcessor.DataModels;
-using DataProcessor.DataModels.ApiModels;
 using DataProcessor.Utils;
 using Newtonsoft.Json;
 using System;
@@ -46,14 +45,18 @@ namespace DataProcessor.Managers
             PIServer = ConfigurationSettings.PiServer;
             Console.WriteLine("Get Pi server Settings :: " + PIServer);
             DatabaseInfo = new DatabaseInfo();
-            string connectionString = GetConnectionStringFromDB(PIServer);
+
+            string connectionString = null;//R GetConnectionStringFromDB(PIServer);
+           
+            connectionString = ConfigurationSettings.PiServerConnectionString;
+           
             if (!string.IsNullOrEmpty(connectionString))
             {
                 DatabaseInfo = new DatabaseInfo() { Name = PIServer, ConnectionString = connectionString };
             }
             else
             {
-                Console.WriteLine("Failed to fetch connection string from DB for PI Server = " + PIServer);
+                Utility.Log("Failed to fetch connection string from Configuration for PI Server = " + PIServer);
             }
 
             ConfigurationSettings.SetCloudConfigDataModel(GeCloudConfigurationSettings(PIServer));
@@ -104,7 +107,8 @@ namespace DataProcessor.Managers
                     }
 
                 }
-                settingModel.FCMURL = Constants.CLOUD_CONFIGURATION_FIREBASE_SEND_URL_KEY;
+                settingModel.FCMURL = Constants.CLOUD_CONFIGURATION_FIREBASE_SEND_URL_VALUE;
+                settingModel.Icon = Constants.CLOUD_CONFIGURATION_FIREBASE_ICON_VALUE;
                 configurationsqlDataReader.Close();
 
                 //for blob storage configuration
@@ -126,7 +130,7 @@ namespace DataProcessor.Managers
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Exception occured in get cloud Configuration settings " + ex.Message);
+               Utility.Log("Exception occured in get cloud Configuration settings " + ex.Message);
                 return settingModel;
             }
         }
@@ -195,11 +199,40 @@ namespace DataProcessor.Managers
                 sqlCommandUpdateUTCConversionTime.Parameters.Add(new SqlParameter("@serverName", serverName));
 
                 sqlCommandUpdateUTCConversionTime.ExecuteNonQuery();
+
+
                 sqlConnection.Close();
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Exception occured in Update UTC Time Difference ", ex.Message);
+                Console.WriteLine("Exception occured ::UpdateUTCTimeDifference()  in Update UTC Time Difference "+ex.Message);
+                Utility.Log("Exception occured ::UpdateUTCTimeDifference()  in Update UTC Time Difference "+ex.Message);
+            }
+        }
+
+        public void InserPIConfigurationDetailsToDB(PIConfigurationInfoModel piConfig)
+        {
+            try
+            {
+                SqlConnection sqlConnection = new SqlConnection();
+                sqlConnection.ConnectionString = ConfigurationSettings.AzureConnectionString;
+                sqlConnection.Open();
+                SqlCommand sqlCommandUpdateUTCConversionTime = new SqlCommand("Insert into PiServer(PiServerName,PiServerDesc,PiServerURL,CreatedOn,UTCConversionTime) VALUES (@PiServerName,@PiServerDesc,@PiServerURL,@CreatedOn,@UTCConversionTime)", sqlConnection);
+                sqlCommandUpdateUTCConversionTime.Parameters.Add(new SqlParameter("@PiServerName", piConfig.PiServerName));
+                sqlCommandUpdateUTCConversionTime.Parameters.Add(new SqlParameter("@PiServerDesc", piConfig.PiServerDesc));
+                sqlCommandUpdateUTCConversionTime.Parameters.Add(new SqlParameter("@PiServerURL", piConfig.PiServerURL));
+                sqlCommandUpdateUTCConversionTime.Parameters.Add(new SqlParameter("@CreatedOn", piConfig.CreatedOn));
+                sqlCommandUpdateUTCConversionTime.Parameters.Add(new SqlParameter("@UTCConversionTime", piConfig.UTCConversionTime));
+
+                sqlCommandUpdateUTCConversionTime.ExecuteNonQuery();
+
+
+                sqlConnection.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception occured in InserPIConfigurationDetailsToDB", ex.Message);
+                Utility.Log("Exception occured ::InserPIConfigurationDetailsToDB()" + ex.Message);
             }
         }
 

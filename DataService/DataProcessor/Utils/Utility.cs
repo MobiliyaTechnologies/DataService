@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -57,7 +58,7 @@ namespace DataProcessor.Utils
         {
             CloudConfigurationSettingsModel cloudConfig = ConfigurationSettings.GetCloudConfigDataModel();
             if (!((string.IsNullOrEmpty(cloudConfig.ApplicationId)) || (string.IsNullOrEmpty(cloudConfig.NotificationSender)) || (string.IsNullOrEmpty(cloudConfig.NotificationReceiver))
-                || (string.IsNullOrEmpty(cloudConfig.ClickAction))  || (string.IsNullOrEmpty(cloudConfig.FCMURL))))
+                || (string.IsNullOrEmpty(cloudConfig.ClickAction))  || (string.IsNullOrEmpty(cloudConfig.FCMURL)) || (string.IsNullOrEmpty(cloudConfig.Icon))))
             {
                 try
                 {
@@ -83,6 +84,7 @@ namespace DataProcessor.Utils
                             body = body,
                             title = title,
                             click_action = cloudConfig.ClickAction,
+                            icon = cloudConfig.Icon,
                             sound = "default"
                             //  }
                         },
@@ -124,6 +126,25 @@ namespace DataProcessor.Utils
             {
                 Console.WriteLine("Not having sufficient value to send notification");
             }
+
+
         }
+
+
+
+        public static void Log(object value)
+        {
+            if(value != null)
+            {
+                eventLog.WriteEntry(value.ToString());
+            }
+        }
+        static EventLog eventLog;
+        public static void InitLog(EventLog log)
+        {
+            eventLog = log;
+        }
+
+
     }
 }

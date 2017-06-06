@@ -89,6 +89,7 @@ namespace DataProcessor.Managers
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("{0} > Exception: {1}", DateTime.Now, ex.Message);
                 Console.ResetColor();
+                Utility.Log("Exception Occured :: GetTableFromCSV() :: " + ex.Message);
                 return null;
             }
         }
@@ -152,6 +153,7 @@ namespace DataProcessor.Managers
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("{0} > Exception: {1}", DateTime.Now, exception.Message);
                 Console.ResetColor();
+                Utility.Log("Exception Occured :: ProcessDataRow() :: " + exception.Message);
             }
             return classModel;
         }
