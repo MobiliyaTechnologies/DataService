@@ -34,24 +34,36 @@ namespace DataProcessor.Managers
 
         #region PRIVATE VARIABLE
         DataTable tableCSV = null;
+        string filePath = null;
         #endregion
 
         /// <summary>
         /// This method should be called when we do a new pi server processing.This method will download respective file and update Table object.
         /// </summary>
         /// <param name="serverName"></param>
-        public void ReInitialize(string serverName)
+        public bool ReInitialize(string serverName)
         {
-            string filePath = Path.Combine(
+            filePath = Path.Combine(
                 System.Environment.CurrentDirectory,
-                "\\"+Constants.CLASS_SCHEDULE_STORAGE_FILE_PREFIX + serverName + Constants.CLASS_SCHEDULE_STORAGE_FILE_EXTENSION);
+                "\\" + Constants.CLASS_SCHEDULE_STORAGE_FILE_PREFIX + serverName + Constants.CLASS_SCHEDULE_STORAGE_FILE_EXTENSION);
             if (!File.Exists(filePath))
             {
                 BlobStorageManager.Instance().DownloadFileFromBlob(Constants.CLASS_SCHEDULE_STORAGE_FILE_PREFIX+ serverName, Constants.CLASS_SCHEDULE_STORAGE_FILE_EXTENSION, filePath);
             }
-            // read table.
-            tableCSV = GetDataTableFromCSV(filePath);
+
+            if(File.Exists(filePath))
+            {
+                // read table.
+                tableCSV = GetDataTableFromCSV(filePath);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+           
         }
+       
 
         //Converts day value to day i.e. convert 1 into M similarly 2 into T 
         string GetDayFromDayValue(int dayValue)
@@ -86,10 +98,10 @@ namespace DataProcessor.Managers
             }
             catch (Exception ex)
             {
+                Utility.Log("Exception Occured :: GetTableFromCSV() :: " + ex.Message);
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("{0} > Exception: {1}", DateTime.Now, ex.Message);
-                Console.ResetColor();
-                Utility.Log("Exception Occured :: GetTableFromCSV() :: " + ex.Message);
+                Console.ResetColor();                
                 return null;
             }
         }
