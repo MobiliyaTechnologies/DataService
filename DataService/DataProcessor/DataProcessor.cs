@@ -46,6 +46,11 @@ namespace DataProcessor
         {
             try
             {
+
+                Utility.Log("PI server : " + ConfigurationSettings.PiServer);
+                Utility.Log("Azure ConnectionString : " + ConfigurationSettings.AzureConnectionString);
+                Utility.Log("Pi Server ConnectionString : " + ConfigurationSettings.PiServerConnectionString);
+
                 if (!((string.IsNullOrEmpty(ConfigurationSettings.PiServer)) || (string.IsNullOrEmpty(ConfigurationSettings.AzureConnectionString)) || (string.IsNullOrEmpty(ConfigurationSettings.PiServerConnectionString))
               ))
                 {
@@ -53,18 +58,18 @@ namespace DataProcessor
 
                     Console.WriteLine("Init ProcessData");
                     Utility.Log("Init ProcessData");
-                    if (utcConversionTime != GetAndTimezone())
-                    {
-                        utcConversionTime = GetAndTimezone();
-                        PIConfigurationInfoModel piConfig = new PIConfigurationInfoModel();
-                        string serverName = ConfigurationSettings.PiServer;
-                        piConfig.PiServerDesc = serverName;
-                        piConfig.PiServerName = serverName;
-                        piConfig.PiServerURL = ConfigurationSettings.PiServerConnectionString;
-                        piConfig.UTCConversionTime = utcConversionTime;
-                        piConfig.CreatedOn = DateTime.UtcNow;
-                        ConnectionManager.Instance().InserPIConfigurationDetailsToDB(piConfig);
-                    }
+                    //if (utcConversionTime != GetAndTimezone())
+                    //{
+                    utcConversionTime = GetAndTimezone();
+                    PIConfigurationInfoModel piConfig = new PIConfigurationInfoModel();
+                    string serverName = ConfigurationSettings.PiServer;
+                    piConfig.PiServerDesc = serverName;
+                    piConfig.PiServerName = serverName;
+                    piConfig.PiServerURL = ConfigurationSettings.PiServerConnectionString;
+                    piConfig.UTCConversionTime = utcConversionTime;
+                    piConfig.CreatedOn = DateTime.UtcNow;
+                    ConnectionManager.Instance().InserPIConfigurationDetailsToDB(piConfig);
+                    //}
                     ConnectionManager.Instance().Initialize();
                     Console.WriteLine("Done with Console manager initialization");
 
@@ -116,16 +121,16 @@ namespace DataProcessor
         void ProcessDataByPIServer(string piServerName)
         {
 
-
+            Utility.Log("Process started" + piServerName + " " + DateTime.Now.ToString());
             while (true)
             {
                 try
                 {
-                    if (utcConversionTime != GetAndTimezone())
-                    {
-                        utcConversionTime = GetAndTimezone();
-                        ConnectionManager.Instance().UpdateUTCTimeDifference(piServerName, utcConversionTime);
-                    }
+                    //if (utcConversionTime != GetAndTimezone())
+                    //{
+                    utcConversionTime = GetAndTimezone();
+                    ConnectionManager.Instance().UpdateUTCTimeDifference(piServerName, utcConversionTime);
+                    //}
 
                     //Class Schedule File initialization
                     bool isClassScheduleFileExist = ClassScheduleManager.Instance().ReInitialize(piServerName);
@@ -137,7 +142,7 @@ namespace DataProcessor
                     SqlConnection piConnection = ConnectionManager.Instance().GetPISQLConnection(piServerName);
                     ConnectionManager.Instance().OpenSQLConnection(piConnection);
                     Console.WriteLine("Pi SQL Connection Opened");
-
+                    Utility.Log("Pi SQL Connection Opened");
 
                     SqlConnection weatherConnection = ConnectionManager.Instance().GetPISQLConnection(piServerName);
                     ConnectionManager.Instance().OpenSQLConnection(weatherConnection);
@@ -170,6 +175,8 @@ namespace DataProcessor
                         processedDataInfo = new ProcessedDataModel { MeterTimestamp = new Dictionary<string, DateTime>() };
                     Dictionary<string, DateTime> meterTimestamp = processedDataInfo.MeterTimestamp;
                     //Todo need to add validation here at timestamp whether it is null or not, if it is null then have to add default value
+
+                    Utility.Log("Meter Count : " + meterList.Count);
 
                     meterList.All(meter =>
                     {
@@ -215,8 +222,8 @@ namespace DataProcessor
                             utcDate = utcDate.AddHours(utcConversionTime);
                             var utcSQLFormattedDate = utcDate.ToString(Constants.DATE_TIME_FORMAT);
 
-                            
-                           
+
+
 
                             if (pireader["Id"] != DBNull.Value)
                                 data.Id = Convert.ToInt32(pireader["Id"]);
@@ -235,7 +242,7 @@ namespace DataProcessor
                             if (pireader["Building"] != DBNull.Value)
                                 data.Building = Convert.ToString(pireader["Building"]);
 
-                            if(isClassScheduleFileExist)
+                            if (isClassScheduleFileExist)
                             {
                                 ClassOccupanyDetails classDetails = ClassScheduleManager.Instance().ProcessDataRow(serialNumber, utcDate);
                                 data.ClassOccupanyRemaining = classDetails.ClassOccupanyRemaining;
@@ -266,9 +273,7 @@ namespace DataProcessor
                             if (pireader["Rated Amperage"] != DBNull.Value)
                                 data.Rated_Amperage = Convert.ToDouble(pireader["Rated Amperage"]);
 
-                            data.Pressure = Convert.ToDouble(weatherDetails.Pressure);
 
-                            data.Relative_humidity = Convert.ToDouble(weatherDetails.RelativeHumidity);
 
                             if (pireader["Rolling Hourly kWh System"] != DBNull.Value)
                                 data.Rolling_hourly_kwh_system = Convert.ToDouble(pireader["Rolling Hourly kWh System"]);
@@ -276,14 +281,27 @@ namespace DataProcessor
                             if (pireader["Serial Number"] != DBNull.Value)
                                 data.Serial_number = Convert.ToString(pireader["Serial Number"]);
 
-                            data.Temperature = Convert.ToDouble(weatherDetails.Temperature);
+                            if (weatherDetails != null)
+                            {
+                                data.Pressure = Convert.ToDouble(weatherDetails.Pressure);
+                                data.Relative_humidity = Convert.ToDouble(weatherDetails.RelativeHumidity);
+                                data.Temperature = Convert.ToDouble(weatherDetails.Temperature);
+                                data.Visibility = Convert.ToDouble(weatherDetails.Visibility);
+                            }
+                            else
+                            {
+                                data.Pressure = 0;
+                                data.Relative_humidity = 0;
+                                data.Temperature = 0;
+                                data.Visibility = 0;
+                            }
                             //Check here
                             data.Timestamp = Convert.ToDateTime(utcSQLFormattedDate);
 
                             if (pireader["Type"] != DBNull.Value)
                                 data.Type = Convert.ToString(pireader["Type"]);
 
-                            data.Visibility = Convert.ToDouble(weatherDetails.Visibility);
+
                             if (pireader["Volts L1 to Neutral"] != DBNull.Value)
                                 data.Volts_L1_to_neutral = Convert.ToDouble(pireader["Volts L1 to Neutral"]);
                             if (pireader["Volts L2 to Neutral"] != DBNull.Value)
@@ -306,10 +324,12 @@ namespace DataProcessor
                             if (Utility.TrimDateToMinute(lastProcessedDate) == endTime.AddMinutes(-1))
                             {
                                 Console.WriteLine("Now going to update Database");
+                                Utility.Log("Now going to update Database");
                                 sleepTimeInMins = 0;
                                 updateDatabase(meterDataList);
                                 processedDataInfo.MeterTimestamp = meterTimestamp;
                                 Console.Write("Storing value to Blob : " + processedDataInfo);
+                                Utility.Log("Storing value to Blob : " + processedDataInfo);
                                 BlobStorageManager.Instance().SetLastProcessedData<ProcessedDataModel>(piServerName, Constants.THRESHOLD_METER_STORAGE_FILENAME_PREFIX, processedDataInfo);
                             }
                             else
@@ -338,7 +358,9 @@ namespace DataProcessor
                 {
                     Console.WriteLine("*********Exception Occured Message******" + e.Message);
                     Console.WriteLine("*********Exception Occured StackTrace******" + e.StackTrace);
-                    Utility.Log("Exception Occured :: ProcessDataByPiServer()" + e.Message);
+                    Utility.Log("*********Exception Occured Message******" + e.Message);
+                    Utility.Log("*********Exception Occured StackTrace******" + e.StackTrace);
+                    //Utility.Log("Exception Occured :: ProcessDataByPiServer()" + e.Message);
                 }
             }
         }
@@ -471,30 +493,47 @@ namespace DataProcessor
             weatherCmd.Parameters["@startTime"].Value = startSQLFormattedDate;
             weatherCmd.Parameters.Add("@endTime", SqlDbType.DateTime);
             weatherCmd.Parameters["@endTime"].Value = endSQLFormattedDate;
-            SqlDataReader weatherReader = weatherCmd.ExecuteReader();
+            SqlDataReader weatherReader = null;
+            try
+            {
+                weatherReader = weatherCmd.ExecuteReader();
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("Weather table does not exists.");
+                //Utility.Log("Weather table does not exists.");
+            }
+
 
             WeatherDetails weatherDetails = new WeatherDetails();
 
-            while (weatherReader.Read())
+            if (weatherReader != null)
             {
-                if (weatherReader["Temperature"] != DBNull.Value)
-                    weatherDetails.Temperature = Convert.ToInt32(weatherReader["Temperature"]);
-                if (weatherReader["Pressure"] != DBNull.Value)
-                    weatherDetails.Pressure = Convert.ToInt32(weatherReader["Pressure"]);
-                if (weatherReader["Relative Humidity"] != DBNull.Value)
-                    weatherDetails.RelativeHumidity = Convert.ToInt32(weatherReader["Relative Humidity"]);
-                if (weatherReader["visibility"] != DBNull.Value)
-                    weatherDetails.Visibility = Convert.ToInt32(weatherReader["visibility"]);
-
-                if (weatherDetails.Temperature == 0)
+                while (weatherReader.Read())
                 {
-                    continue;
-                }
+                    if (weatherReader["Temperature"] != DBNull.Value)
+                        weatherDetails.Temperature = Convert.ToInt32(weatherReader["Temperature"]);
+                    if (weatherReader["Pressure"] != DBNull.Value)
+                        weatherDetails.Pressure = Convert.ToInt32(weatherReader["Pressure"]);
+                    if (weatherReader["Relative Humidity"] != DBNull.Value)
+                        weatherDetails.RelativeHumidity = Convert.ToInt32(weatherReader["Relative Humidity"]);
+                    if (weatherReader["visibility"] != DBNull.Value)
+                        weatherDetails.Visibility = Convert.ToInt32(weatherReader["visibility"]);
 
-                break;
+                    if (weatherDetails.Temperature == 0)
+                    {
+                        continue;
+                    }
+
+                    break;
+                }
+                weatherReader.Close();
+                return weatherDetails;
             }
-            weatherReader.Close();
-            return weatherDetails;
+            else
+            {
+                return null;
+            }
         }
 
         string GetDayFromTimestamp(DateTime timeStamp)
@@ -705,7 +744,7 @@ namespace DataProcessor
                     azureSQLConnection.ConnectionString = ConfigurationSettings.AzureConnectionString;
                     azureSQLConnection.Open();
                     int buildingId = 0;
-
+                    Utility.Log("Inserting Building  : " + meter.BuildingName);
                     //if exist building name in building table
                     //insert this building into building table
                     string query = " IF NOT EXISTS(SELECT * FROM[dbo].[Building] WHERE [BuildingName] = @BuildingName) BEGIN INSERT INTO [dbo].[Building]([BuildingName]) OUTPUT INSERTED.[BuildingID] VALUES (@BuildingName) END";
@@ -733,6 +772,7 @@ namespace DataProcessor
                     {
                         meter.BuildingId = buildingId;
                         meter.UTCConversionTime = UTCConversionDifference;
+                        Utility.Log("Inserting Meter  : " + meter.PowerScout);
                         SqlCommand cmdInsertMeters = new SqlCommand("INSERT INTO MeterDetails(PowerScout,Breaker_details,PiServerName,UTCConversionTime,BuildingId) VALUES (@PowerScout,@Breaker_details,@PiServerName,@UTCConversionTime,@BuildingId)", azureSQLConnection);
                         cmdInsertMeters.Parameters.Add(new SqlParameter("@PowerScout", meter.PowerScout));
                         cmdInsertMeters.Parameters.Add(new SqlParameter("@Breaker_details", meter.Breaker_details));
@@ -743,7 +783,7 @@ namespace DataProcessor
                     }
                     else
                     {
-                        Utility.Log("InsertMetersIntoAzure() Building iD is 0 for meter :: " + meter.PowerScout);
+                        //Utility.Log("InsertMetersIntoAzure() Building iD is 0 for meter :: " + meter.PowerScout);
                     }
                     azureSQLConnection.Close();
 
@@ -751,7 +791,7 @@ namespace DataProcessor
             }
             catch (Exception e)
             {
-                Utility.Log("Exception Occured : InsertMetersIntoAzure()" + e.Message);
+                //Utility.Log("Exception Occured : InsertMetersIntoAzure()" + e.Message);
             }
         }
         public double GetAndTimezone()
