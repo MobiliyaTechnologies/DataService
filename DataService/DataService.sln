@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataModels", "DataModels\Da
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LocalStarter", "LocalStarter\LocalStarter.csproj", "{F87837A2-7D77-43FC-9465-EF4BDD8A2E15}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "DataServiceSetup", "DataServiceSetup\DataServiceSetup.vdproj", "{0EDEA96A-DBE7-439C-9021-305923B71B26}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{F87837A2-7D77-43FC-9465-EF4BDD8A2E15}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F87837A2-7D77-43FC-9465-EF4BDD8A2E15}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F87837A2-7D77-43FC-9465-EF4BDD8A2E15}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0EDEA96A-DBE7-439C-9021-305923B71B26}.Debug|Any CPU.ActiveCfg = Debug
+		{0EDEA96A-DBE7-439C-9021-305923B71B26}.Debug|Any CPU.Build.0 = Debug
+		{0EDEA96A-DBE7-439C-9021-305923B71B26}.Release|Any CPU.ActiveCfg = Release
+		{0EDEA96A-DBE7-439C-9021-305923B71B26}.Release|Any CPU.Build.0 = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

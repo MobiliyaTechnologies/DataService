@@ -39,7 +39,8 @@
             // 
             // serviceInstaller1
             // 
-            this.serviceInstaller1.ServiceName = "DataService";
+            this.serviceInstaller1.DisplayName = "DataServiceEM";
+            this.serviceInstaller1.ServiceName = "DataServiceEM";
             this.serviceInstaller1.StartType = System.ServiceProcess.ServiceStartMode.Automatic;
             // 
             // ProjectInstaller

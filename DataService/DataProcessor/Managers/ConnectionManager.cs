@@ -47,9 +47,9 @@ namespace DataProcessor.Managers
             DatabaseInfo = new DatabaseInfo();
 
             string connectionString = null;//R GetConnectionStringFromDB(PIServer);
-           
+
             connectionString = ConfigurationSettings.PiServerConnectionString;
-           
+
             if (!string.IsNullOrEmpty(connectionString))
             {
                 DatabaseInfo = new DatabaseInfo() { Name = PIServer, ConnectionString = connectionString };
@@ -130,14 +130,14 @@ namespace DataProcessor.Managers
             }
             catch (Exception ex)
             {
-               Utility.Log("Exception occured in get cloud Configuration settings " + ex.Message);
+                Utility.Log("Exception occured in get cloud Configuration settings " + ex.Message);
                 return settingModel;
             }
         }
 
 
 
-     
+
 
         /// <summary>
         /// Method accepts server name and make a new object of sql connection with connection string as per server name.
@@ -205,8 +205,8 @@ namespace DataProcessor.Managers
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Exception occured ::UpdateUTCTimeDifference()  in Update UTC Time Difference "+ex.Message);
-                Utility.Log("Exception occured ::UpdateUTCTimeDifference()  in Update UTC Time Difference "+ex.Message);
+                Console.WriteLine("Exception occured ::UpdateUTCTimeDifference()  in Update UTC Time Difference " + ex.Message);
+                Utility.Log("Exception occured ::UpdateUTCTimeDifference()  in Update UTC Time Difference " + ex.Message);
             }
         }
 
@@ -217,7 +217,7 @@ namespace DataProcessor.Managers
                 SqlConnection sqlConnection = new SqlConnection();
                 sqlConnection.ConnectionString = ConfigurationSettings.AzureConnectionString;
                 sqlConnection.Open();
-                SqlCommand sqlCommandUpdateUTCConversionTime = new SqlCommand("Insert into PiServer(PiServerName,PiServerDesc,PiServerURL,CreatedOn,UTCConversionTime) VALUES (@PiServerName,@PiServerDesc,@PiServerURL,@CreatedOn,@UTCConversionTime)", sqlConnection);
+                SqlCommand sqlCommandUpdateUTCConversionTime = new SqlCommand("IF NOT EXISTS(Select PiServerName from PiServer where PiServerName = @PiServerName) BEGIN Insert into PiServer(PiServerName, PiServerDesc, PiServerURL, CreatedOn, UTCConversionTime) VALUES(@PiServerName, @PiServerDesc, @PiServerURL, @CreatedOn, @UTCConversionTime) END", sqlConnection);
                 sqlCommandUpdateUTCConversionTime.Parameters.Add(new SqlParameter("@PiServerName", piConfig.PiServerName));
                 sqlCommandUpdateUTCConversionTime.Parameters.Add(new SqlParameter("@PiServerDesc", piConfig.PiServerDesc));
                 sqlCommandUpdateUTCConversionTime.Parameters.Add(new SqlParameter("@PiServerURL", piConfig.PiServerURL));

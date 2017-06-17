@@ -13,38 +13,47 @@ namespace DataService
 {
     public partial class DataService : ServiceBase
     {
-        
+
         public DataService()
         {
             InitializeComponent();
-            
-            if (!EventLog.SourceExists("DataService"))
+
+            if (!EventLog.SourceExists("DataServiceEM"))
             {
                 //An event log source should not be created and immediately used.
                 //There is a latency time to enable the source, it should be created
                 //prior to executing the application that uses the source.
                 //Execute this sample a second time to use the new source.
-                EventLog.CreateEventSource("DataService", "DataServiceLog");
+                EventLog.CreateEventSource("DataServiceEM", "DataServiceEM");
                 Console.WriteLine("CreatedEventSource");
                 Console.WriteLine("Exiting, execute the application a second time to use the source.");
                 // The source is created.  Exit the application to allow it to be registered.
-              //  return;
+                //  return;
             }
             else
             {
-                EventLog.Source = "DataService";
+                EventLog.Source = "DataServiceEM";
                 // Write an informational entry to the event log.    
                 EventLog.WriteEntry("Writing to event log.");
             }
 
-            
+
         }
 
         protected override void OnStart(string[] args)
         {
             EventLog.WriteEntry("Inside on Start.");
-            DataProcessor.DataProcessor process = new DataProcessor.DataProcessor(EventLog);
-            process.ProcessData();
+            try
+            {
+                DataProcessor.DataProcessor process = new DataProcessor.DataProcessor(EventLog);
+                process.ProcessData();
+                EventLog.WriteEntry(" Data service process started.");
+            }
+            catch (Exception ex)
+            {
+                EventLog.WriteEntry(" Service Exception occured: " + ex.Message);
+            }
+
         }
 
         protected override void OnStop()
