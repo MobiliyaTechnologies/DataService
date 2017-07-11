@@ -60,7 +60,7 @@ namespace DataProcessor.Processor
 
                 SqlConnection getPiSensorDataConn = ConnectionManager.Instance().GetPISQLConnection(piServerName);
                 ConnectionManager.Instance().OpenSQLConnection(getPiSensorDataConn);
-                SqlCommand getPiSensorDataCommand = processedDataInfo == null ? new SqlCommand("SELECT * FROM SensorData WHERE TimeStamp >= @TimeStamp", getPiSensorDataConn) : new SqlCommand("SELECT * FROM SensorData WHERE TimeStamp > @TimeStamp", getPiSensorDataConn);
+                SqlCommand getPiSensorDataCommand = (processedTimestamp == null || processedTimestamp == DateTime.MinValue || processedTimestamp == default(DateTime)) ? new SqlCommand("SELECT * FROM SensorData WHERE TimeStamp >= @TimeStamp", getPiSensorDataConn) : new SqlCommand("SELECT * FROM SensorData WHERE TimeStamp > @TimeStamp", getPiSensorDataConn);
                 processedTimestamp = firstEntryTimeStamp;
 
                 getPiSensorDataCommand.Parameters.Add(new SqlParameter("@TimeStamp", processedTimestamp));
@@ -186,8 +186,8 @@ namespace DataProcessor.Processor
                         sensor.Sensor_Id = Convert.ToInt32(sensorListDataReader["Sensor_Id"]);
                     if (sensorListDataReader["Sensor_Name"] != DBNull.Value)
                         sensor.Sensor_Name = sensorListDataReader["Sensor_Name"].ToString();
-                    if (sensorListDataReader["Class_Id"] != DBNull.Value)
-                        sensor.Class_Id = Convert.ToInt32(sensorListDataReader["Class_Id"]);
+                    if (sensorListDataReader["Room_Id"] != DBNull.Value)
+                        sensor.Room_Id = Convert.ToInt32(sensorListDataReader["Room_Id"]);
                     if (sensorListDataReader["PiServerName"] != DBNull.Value)
                         sensor.PiServerName = Convert.ToString(sensorListDataReader["PiServerName"]);
 
