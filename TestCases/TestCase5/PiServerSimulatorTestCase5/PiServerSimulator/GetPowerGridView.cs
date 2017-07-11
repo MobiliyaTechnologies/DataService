@@ -26,10 +26,10 @@ namespace PiServerSimulator
         //PiServer 8
 
         public static string[] BuildingName = new string[] { "Chemistry Building", "Science Building" }; static double[] BuildingMultiplier = new double[] { 0.5, 0.3 };
-        static string[] Type = new string[] { "PowerScout 1037", "PowerScout 2037" };
-        static List<List<string>> powerScouts = new List<List<string>> { new List<String> { "P371602028", "P371602030" }, new List<String> { "P371602018", "P371602020"} };
-        static List<List<string>> breakerDetails = new List<List<string>> { new List<String> { "New (2018) 4th floor panel - almost empty", "1000A duct bank for panels B,C,D - 272v lighting" }, new List<String> { "New (2012) 5th floor panel - almost empty", "2000A duct bank for panels B,C,D - 200v lighting" } };
-        static List<List<string>> breakerLabels = new List<List<string>> { new List<String> { "PP14 - 5th Fl Electrical Rm", "Main Lighting Chemistry" }, new List<String> { "PP51 - 4th F6 Electrical Rm", "Main Lighting Area" } };
+        static string[] Type = new string[] { "PowerScout 1037", "PowerScout 3037" };
+        static List<List<string>> powerScouts = new List<List<string>> { new List<String> { "P371602028", "P371602030" }, new List<String> { "P371602018", "P371602020" } };
+        static List<List<string>> breakerDetails = new List<List<string>> { new List<String> { "New (2018) 4th floor panel - almost empty", "Link tp P2,L3" }, new List<String> { "New (2013) 3rd floor panel - almost empty", "Lunk to P3, P4" } };
+        static List<List<string>> breakerLabels = new List<List<string>> { new List<String> { "PP14 - 5th Fl Electrical Rm", "Second Floor" }, new List<String> { "PP31 - 3rd Fl Electrical Rm", "First Floor" } };
 
 
 
@@ -64,7 +64,7 @@ namespace PiServerSimulator
             public double kWSystem = 226.575086870641 * multiplier;
             public double pIIntTSTicks_min = 636089806874751616 * (multiplier * 2);
             public double pIIntTSTicks_max = 636289444874751616 * (multiplier * 2);
-            public string powerGridInsertQuery = "INSERT INTO powergridview([PowerScout],[TimeStamp],[Amps L1],[Amps L2],[Amps L3],[Amps System Avg],[Breaker Details],[Breaker Label],[Building],[Daily Electric Cost],[Daily kWh System],[Modbus Base Address],[Monthly Electric Cost],[Monthly kWh System],[Rated Amperage],[ReadingTime],[Rolling Hourly kWh System],[Serial Number],[Type],[Volts L1 to Neutral],[Volts L2 to Neutral],[Volts L3 to Neutral],[kW L1],[kW L2],[kW L3],[kW System],[PIIntTSTicks],[PIIntShapeID]) VALUES (@PowerScout,@TimeStamp,@AmpsL1,@AmpsL2,@AmpsL3,@AmpsSystemAvg,@BreakerDetails,@BreakerLabel,@Building,@DailyElectricCost,@DailykWhSystem,@ModbusBaseAddress,@MonthlyElectricCost,@MonthlykWhSystem,@RatedAmperage,@ReadingTime,@RollingHourlykWhSystem,@SerialNumber,@Type,@VoltsL1toNeutral,@VoltsL2toNeutral,@VoltsL3toNeutral,@kWL1,@kWL2,@kWL3,@kWSystem,@PIIntTSTicks,@PIIntShapeID)";
+            public string powerGridInsertQuery = "INSERT INTO powergridview([Id],[PowerScout],[TimeStamp],[Amps L1],[Amps L2],[Amps L3],[Amps System Avg],[Breaker Details],[Breaker Label],[Building],[Daily Electric Cost],[Daily kWh System],[Modbus Base Address],[Monthly Electric Cost],[Monthly kWh System],[Rated Amperage],[ReadingTime],[Rolling Hourly kWh System],[Serial Number],[Type],[Volts L1 to Neutral],[Volts L2 to Neutral],[Volts L3 to Neutral],[kW L1],[kW L2],[kW L3],[kW System],[PIIntTSTicks],[PIIntShapeID]) VALUES (@Id,@PowerScout,@TimeStamp,@AmpsL1,@AmpsL2,@AmpsL3,@AmpsSystemAvg,@BreakerDetails,@BreakerLabel,@Building,@DailyElectricCost,@DailykWhSystem,@ModbusBaseAddress,@MonthlyElectricCost,@MonthlykWhSystem,@RatedAmperage,@ReadingTime,@RollingHourlykWhSystem,@SerialNumber,@Type,@VoltsL1toNeutral,@VoltsL2toNeutral,@VoltsL3toNeutral,@kWL1,@kWL2,@kWL3,@kWSystem,@PIIntTSTicks,@PIIntShapeID)";
 
 
             public Building(string buildingName)
@@ -99,7 +99,7 @@ namespace PiServerSimulator
                 kWSystem = 226.575086870641 * multiplier;
                 pIIntTSTicks_min = 636089806874751616 * (multiplier * 2);
                 pIIntTSTicks_max = 636289444874751616 * (multiplier * 2);
-                powerGridInsertQuery = "INSERT INTO powergridview([PowerScout],[TimeStamp],[Amps L1],[Amps L2],[Amps L3],[Amps System Avg],[Breaker Details],[Breaker Label],[Building],[Daily Electric Cost],[Daily kWh System],[Modbus Base Address],[Monthly Electric Cost],[Monthly kWh System],[Rated Amperage],[ReadingTime],[Rolling Hourly kWh System],[Serial Number],[Type],[Volts L1 to Neutral],[Volts L2 to Neutral],[Volts L3 to Neutral],[kW L1],[kW L2],[kW L3],[kW System],[PIIntTSTicks],[PIIntShapeID]) VALUES (@PowerScout,@TimeStamp,@AmpsL1,@AmpsL2,@AmpsL3,@AmpsSystemAvg,@BreakerDetails,@BreakerLabel,@Building,@DailyElectricCost,@DailykWhSystem,@ModbusBaseAddress,@MonthlyElectricCost,@MonthlykWhSystem,@RatedAmperage,@ReadingTime,@RollingHourlykWhSystem,@SerialNumber,@Type,@VoltsL1toNeutral,@VoltsL2toNeutral,@VoltsL3toNeutral,@kWL1,@kWL2,@kWL3,@kWSystem,@PIIntTSTicks,@PIIntShapeID)";
+                powerGridInsertQuery = "INSERT INTO powergridview([Id],[PowerScout],[TimeStamp],[Amps L1],[Amps L2],[Amps L3],[Amps System Avg],[Breaker Details],[Breaker Label],[Building],[Daily Electric Cost],[Daily kWh System],[Modbus Base Address],[Monthly Electric Cost],[Monthly kWh System],[Rated Amperage],[ReadingTime],[Rolling Hourly kWh System],[Serial Number],[Type],[Volts L1 to Neutral],[Volts L2 to Neutral],[Volts L3 to Neutral],[kW L1],[kW L2],[kW L3],[kW System],[PIIntTSTicks],[PIIntShapeID]) VALUES (@Id,@PowerScout,@TimeStamp,@AmpsL1,@AmpsL2,@AmpsL3,@AmpsSystemAvg,@BreakerDetails,@BreakerLabel,@Building,@DailyElectricCost,@DailykWhSystem,@ModbusBaseAddress,@MonthlyElectricCost,@MonthlykWhSystem,@RatedAmperage,@ReadingTime,@RollingHourlykWhSystem,@SerialNumber,@Type,@VoltsL1toNeutral,@VoltsL2toNeutral,@VoltsL3toNeutral,@kWL1,@kWL2,@kWL3,@kWSystem,@PIIntTSTicks,@PIIntShapeID)";
 
             }
 
@@ -116,55 +116,65 @@ namespace PiServerSimulator
 
             int number = rnd.Next(0, building.powerScout.Count - 1);
             AzurePowerGridModel azurePowerGridModel = new AzurePowerGridModel();
-            using (SqlConnection sqlConnection = new SqlConnection(ConfigurationSetting.ConnectionString))
+            try
             {
-                sqlConnection.Open();
-                using (SqlTransaction sqlTransaction = sqlConnection.BeginTransaction())
+                using (SqlConnection sqlConnection = new SqlConnection(ConfigurationSetting.ConnectionString))
                 {
-                    DateTime currentTime = DateTime.UtcNow.AddMonths(-1);
-                    for (int j = 0; j <= 43200; j++)
+                    sqlConnection.Open();
+                    using (SqlTransaction sqlTransaction = sqlConnection.BeginTransaction())
                     {
-                        timeStamp = currentTime.AddMinutes(j);
-                        for (int i = 0; i < building.powerScout.Count; i++)
+                       // DateTime currentTime = DateTime.UtcNow;
+                       // for (int j = 0; j <= 43200; j++)
                         {
-                            azurePowerGridModel = new AzurePowerGridModel();
-                            azurePowerGridModel.PowerScout = building.powerScout.ElementAt(i);
-                            azurePowerGridModel.Timestamp = timeStamp;
-                            azurePowerGridModel.AMPS_L1 = Program.RandomNumberBetween(0, building.ampsl1);
-                            azurePowerGridModel.AMPS_L2 = Program.RandomNumberBetween(0, building.ampsl2);
-                            azurePowerGridModel.AMPS_L3 = Program.RandomNumberBetween(0, building.ampsl3);
-                            azurePowerGridModel.AMPS_SYSTEM_AVG = Program.RandomNumberBetween(0, building.ampsSystemAvg);
-                            azurePowerGridModel.Breaker_details = building.breakerDetail.ElementAt(i);
-                            azurePowerGridModel.Breaker_label = building.breakerLabel.ElementAt(i);
-                            azurePowerGridModel.Building = building.building;
-                            azurePowerGridModel.Daily_electric_cost = Program.RandomNumberBetween(0, building.dailyElectricCost);
-                            azurePowerGridModel.Daily_KWH_System = Program.RandomNumberBetween(0, building.dailykWhSystem);
-                            azurePowerGridModel.ModbusBaseAddress = modbusBaseAddress[i];
-                            azurePowerGridModel.Monthly_electric_cost = Program.RandomNumberBetween(0, building.monthlyElectricCost);
-                            azurePowerGridModel.Monthly_KWH_System = Program.RandomNumberBetween(0, building.monthlykWhSystem);
-                            azurePowerGridModel.Rated_Amperage = Program.RandomNumberBetween(125, building.ratedAmperage);
-                            azurePowerGridModel.ReadingTime = building.readingTime;
-                            azurePowerGridModel.Rolling_hourly_kwh_system = Program.RandomNumberBetween(0, building.rollingHourlykWh);
-                            azurePowerGridModel.Serial_number = building.powerScout.ElementAt(i);
-                            azurePowerGridModel.Type = building.type;
-                            azurePowerGridModel.Volts_L1_to_neutral = Program.RandomNumberBetween(building.voltsL1toNeutral_min, building.voltsL1toNeutral_max);
-                            azurePowerGridModel.Volts_L2_to_neutral = Program.RandomNumberBetween(building.voltsL2toNeutral_min, building.voltsL2toNeutral_max);
-                            azurePowerGridModel.Volts_L3_to_neutral = Program.RandomNumberBetween(building.voltsL3toNeutral_min, building.voltsL3toNeutral_max);
-                            azurePowerGridModel.KW_L1 = Program.RandomNumberBetween(0, building.kWL1);
-                            azurePowerGridModel.KW_L2 = Program.RandomNumberBetween(0, building.kWL2);
-                            azurePowerGridModel.KW_L3 = Program.RandomNumberBetween(0, building.kWL3);
-                            azurePowerGridModel.kW_System = Program.RandomNumberBetween(0, building.kWSystem);
-                            azurePowerGridModel.PIIntTSTicks = Program.RandomNumberBetween(building.pIIntTSTicks_min, building.pIIntTSTicks_max);
-                            azurePowerGridModel.PIIntShapeID = rnd.Next(1, 7);
-                            UpdateDatabaseUsingCommand(building.powerGridInsertQuery, azurePowerGridModel, sqlConnection, sqlTransaction);
+                          //  Console.WriteLine("Processing " + j + " entries "+ " for "+ building.building);
+                           
+                            for (int i = 0; i < building.powerScout.Count; i++)
+                            {
+                                Program.Id = Program.Id+1;
+                                azurePowerGridModel = new AzurePowerGridModel();
+                                azurePowerGridModel.Id = Program.Id;
+                                azurePowerGridModel.PowerScout = building.powerScout.ElementAt(i);
+                                azurePowerGridModel.Timestamp = timeStamp;
+                                azurePowerGridModel.AMPS_L1 = Program.RandomNumberBetween(0, building.ampsl1);
+                                azurePowerGridModel.AMPS_L2 = Program.RandomNumberBetween(0, building.ampsl2);
+                                azurePowerGridModel.AMPS_L3 = Program.RandomNumberBetween(0, building.ampsl3);
+                                azurePowerGridModel.AMPS_SYSTEM_AVG = Program.RandomNumberBetween(0, building.ampsSystemAvg);
+                                azurePowerGridModel.Breaker_details = building.breakerDetail.ElementAt(i);
+                                azurePowerGridModel.Breaker_label = building.breakerLabel.ElementAt(i);
+                                azurePowerGridModel.Building = building.building;
+                                azurePowerGridModel.Daily_electric_cost = Program.RandomNumberBetween(0, building.dailyElectricCost);
+                                azurePowerGridModel.Daily_KWH_System = Program.RandomNumberBetween(0, building.dailykWhSystem);
+                                azurePowerGridModel.ModbusBaseAddress = modbusBaseAddress[i];
+                                azurePowerGridModel.Monthly_electric_cost = Program.RandomNumberBetween(0, building.monthlyElectricCost);
+                                azurePowerGridModel.Monthly_KWH_System = Program.RandomNumberBetween(0, building.monthlykWhSystem);
+                                azurePowerGridModel.Rated_Amperage = Program.RandomNumberBetween(125, building.ratedAmperage);
+                                azurePowerGridModel.ReadingTime = building.readingTime;
+                                azurePowerGridModel.Rolling_hourly_kwh_system = Program.RandomNumberBetween(0, building.rollingHourlykWh);
+                                azurePowerGridModel.Serial_number = building.powerScout.ElementAt(i);
+                                azurePowerGridModel.Type = building.type;
+                                azurePowerGridModel.Volts_L1_to_neutral = Program.RandomNumberBetween(building.voltsL1toNeutral_min, building.voltsL1toNeutral_max);
+                                azurePowerGridModel.Volts_L2_to_neutral = Program.RandomNumberBetween(building.voltsL2toNeutral_min, building.voltsL2toNeutral_max);
+                                azurePowerGridModel.Volts_L3_to_neutral = Program.RandomNumberBetween(building.voltsL3toNeutral_min, building.voltsL3toNeutral_max);
+                                azurePowerGridModel.KW_L1 = Program.RandomNumberBetween(0, building.kWL1);
+                                azurePowerGridModel.KW_L2 = Program.RandomNumberBetween(0, building.kWL2);
+                                azurePowerGridModel.KW_L3 = Program.RandomNumberBetween(0, building.kWL3);
+                                azurePowerGridModel.kW_System = Program.RandomNumberBetween(0, building.kWSystem);
+                                azurePowerGridModel.PIIntTSTicks = Program.RandomNumberBetween(building.pIIntTSTicks_min, building.pIIntTSTicks_max);
+                                azurePowerGridModel.PIIntShapeID = rnd.Next(1, 7);
+                                UpdateDatabaseUsingCommand(building.powerGridInsertQuery, azurePowerGridModel, sqlConnection, sqlTransaction);
+                            }
                         }
-                    }
                         sqlTransaction.Commit();
-                    
+
+                    }
+
+                    sqlConnection.Close();
+
                 }
-
-                sqlConnection.Close();
-
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception occured in AddPowerGridView " + ex.Message);
             }
 
         }
@@ -174,7 +184,7 @@ namespace PiServerSimulator
 
             using (SqlCommand cmd = new SqlCommand(powerGridInsertQuery, sqlConnection, sqlTransaction))
             {
-
+                cmd.Parameters.AddWithValue("@Id", model.Id);
                 cmd.Parameters.AddWithValue("@PowerScout", model.PowerScout);
                 cmd.Parameters.AddWithValue("@TimeStamp", model.Timestamp);
                 cmd.Parameters.AddWithValue("@AmpsL1", model.AMPS_L1);
