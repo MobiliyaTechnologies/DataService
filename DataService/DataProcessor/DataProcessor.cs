@@ -34,12 +34,12 @@ namespace DataProcessor
 
 
 
-        #endregion
-
+       
         public DataProcessor(EventLog log)
         {
             Utility.InitLog(log);
         }
+        #endregion
 
         #region PUBLIC METHODS
         public void ProcessData()
@@ -73,6 +73,7 @@ namespace DataProcessor
                     ConnectionManager.Instance().Initialize();
                     Console.WriteLine("Done with Console manager initialization");
 
+
                     string storageConnectionString = ConfigurationSettings.GetCloudConfigDataModel().BlobStorageURL;
                     //patch for now
 
@@ -82,23 +83,21 @@ namespace DataProcessor
                     if (!string.IsNullOrEmpty(storageConnectionString))
                     {
                         BlobStorageManager.Instance().ConfigureBlobStorage(storageConnectionString);
-                        Console.WriteLine("Done with Blob Storage configuration");
+                        Console.WriteLine("Done with Blob Storage configuration\n");
                         Utility.Log("Done with Console manager initialization");
 
                         string piServer = ConnectionManager.Instance().GetPIServer();
 
-
                         Thread piThread = new Thread(() => { ProcessDataByPIServer(piServer); });
                         piThread.Start();
-                        //Thread sensorThread = new Thread(() => { InsertSensorData(piServer); });
-                        //sensorThread.Start();
+                        Thread sensorThread = new Thread(() => { InsertSensorData(piServer); });
+                        sensorThread.Start();
                     }
                     else
                     {
                         Utility.Log("Does not have storage connection string ");
+                        Console.WriteLine("Does not have storage connection string");
                     }
-
-
                 }
                 else
                 {
@@ -132,6 +131,7 @@ namespace DataProcessor
                     ConnectionManager.Instance().UpdateUTCTimeDifference(piServerName, utcConversionTime);
                     //}
 
+
                     //Class Schedule File initialization
                     bool isClassScheduleFileExist = ClassScheduleManager.Instance().ReInitialize(piServerName);
                     ////
@@ -160,7 +160,10 @@ namespace DataProcessor
                         if (meterDetails != null && meterDetails.Count != 0)
                         {
                             var metersToInsert = meterAndBreakerDetailsListFromPI.Where(p => !meterDetails.Any(p2 => p2.PowerScout == p.PowerScout)).ToList();
-                            InsertMetersIntoAzure(metersToInsert, utcConversionTime);
+                            if(metersToInsert!=null && metersToInsert.Count != 0 )
+                            {
+                                InsertMetersIntoAzure(metersToInsert, utcConversionTime);
+                            }
                         }
                         else
                         {
@@ -320,6 +323,7 @@ namespace DataProcessor
                         //Hack Hack Hack
                         if (meterDataList != null && meterDataList.Count != 0)
                         {
+                            Utility.Log("ProcessDataByPIServer() , NeterDataList Count == "+ meterDataList.Count);
                             //    This condition means we get all(29)entries of that perticular half hour
                             if (Utility.TrimDateToMinute(lastProcessedDate) == endTime.AddMinutes(-1))
                             {
@@ -358,9 +362,6 @@ namespace DataProcessor
                 {
                     Console.WriteLine("*********Exception Occured Message******" + e.Message);
                     Console.WriteLine("*********Exception Occured StackTrace******" + e.StackTrace);
-                    Utility.Log("*********Exception Occured Message******" + e.Message);
-                    Utility.Log("*********Exception Occured StackTrace******" + e.StackTrace);
-                    //Utility.Log("Exception Occured :: ProcessDataByPiServer()" + e.Message);
                 }
             }
         }
@@ -467,6 +468,7 @@ namespace DataProcessor
             }
             catch (Exception ex)
             {
+                Console.WriteLine("Exception occured in update database"+ ex.Message);
                 Utility.Log("Exception occured in Update Database method" + ex.Message);
             }
         }
@@ -501,7 +503,7 @@ namespace DataProcessor
             catch (Exception)
             {
                 Console.WriteLine("Weather table does not exists.");
-                //Utility.Log("Weather table does not exists.");
+                Utility.Log("Weather table does not exists.");
             }
 
 
@@ -743,6 +745,7 @@ namespace DataProcessor
                     SqlConnection azureSQLConnection = new SqlConnection();
                     azureSQLConnection.ConnectionString = ConfigurationSettings.AzureConnectionString;
                     azureSQLConnection.Open();
+
                     int buildingId = 0;
                     Utility.Log("Inserting Building  : " + meter.BuildingName);
                     //if exist building name in building table
@@ -756,6 +759,7 @@ namespace DataProcessor
                         buildingId = Convert.ToInt32(result[0]);
                     }
                     result.Close();
+                    //
                     if (buildingId == 0)
                     {
                         string getBuildingIDQuery = "Select [BuildingID] from [dbo].[Building] where BuildingName = @BuildingName";
@@ -783,15 +787,16 @@ namespace DataProcessor
                     }
                     else
                     {
-                        //Utility.Log("InsertMetersIntoAzure() Building iD is 0 for meter :: " + meter.PowerScout);
+                        Utility.Log("InsertMetersIntoAzure() Building iD is 0 for meter :: " + meter.PowerScout);
                     }
+
                     azureSQLConnection.Close();
 
                 }
             }
             catch (Exception e)
             {
-                //Utility.Log("Exception Occured : InsertMetersIntoAzure()" + e.Message);
+                Utility.Log("Exception Occured : InsertMetersIntoAzure()" + e.Message);
             }
         }
         public double GetAndTimezone()

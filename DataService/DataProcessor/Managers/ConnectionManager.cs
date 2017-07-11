@@ -56,7 +56,7 @@ namespace DataProcessor.Managers
             }
             else
             {
-                Utility.Log("Failed to fetch connection string from Configuration for PI Server = " + PIServer);
+                //Utility.Log("Failed to fetch connection string from Configuration for PI Server = " + PIServer);
             }
 
             ConfigurationSettings.SetCloudConfigDataModel(GeCloudConfigurationSettings(PIServer));
@@ -207,6 +207,7 @@ namespace DataProcessor.Managers
             {
                 Console.WriteLine("Exception occured ::UpdateUTCTimeDifference()  in Update UTC Time Difference " + ex.Message);
                 Utility.Log("Exception occured ::UpdateUTCTimeDifference()  in Update UTC Time Difference " + ex.Message);
+
             }
         }
 
@@ -232,7 +233,7 @@ namespace DataProcessor.Managers
             catch (Exception ex)
             {
                 Console.WriteLine("Exception occured in InserPIConfigurationDetailsToDB", ex.Message);
-                Utility.Log("Exception occured ::InserPIConfigurationDetailsToDB()" + ex.Message);
+                //Utility.Log("Exception occured ::InserPIConfigurationDetailsToDB()" + ex.Message);
             }
         }
 

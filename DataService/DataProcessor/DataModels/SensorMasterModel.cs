@@ -11,6 +11,6 @@ namespace DataProcessor.DataModels
         public int Sensor_Id { get; set; }
         public string Sensor_Name { get; set; }
         public string PiServerName { get; set; }
-        public Nullable<int> Class_Id { get; set; }        
+        public Nullable<int> Room_Id { get; set; }        
     }
 }
