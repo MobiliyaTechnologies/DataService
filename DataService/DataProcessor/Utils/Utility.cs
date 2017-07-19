@@ -57,13 +57,13 @@ namespace DataProcessor.Utils
         public static void SendNotification(string title, string body)
         {
             CloudConfigurationSettingsModel cloudConfig = ConfigurationSettings.GetCloudConfigDataModel();
-            if (!((string.IsNullOrEmpty(cloudConfig.ApplicationId)) || (string.IsNullOrEmpty(cloudConfig.NotificationSender)) || (string.IsNullOrEmpty(cloudConfig.NotificationReceiver))
+            if (!((string.IsNullOrEmpty(cloudConfig.ApiKey)) || (string.IsNullOrEmpty(cloudConfig.NotificationSender)) || (string.IsNullOrEmpty(cloudConfig.NotificationReceiver))
                 || (string.IsNullOrEmpty(cloudConfig.ClickAction))  || (string.IsNullOrEmpty(cloudConfig.FCMURL)) || (string.IsNullOrEmpty(cloudConfig.Icon))))
             {
                 try
                 {
                     //var applicationID = "AAAAGQBSH1c:APA91bEcYFZQMez7DyNTgphhxk1Sw4uKgss0xW7qBqiMX9QBHPNeIItIrw8VhvCJVWi8WUGUMPdRrx64P82lUtzmPUdvKFKYdr_UJHQl6lnWrXeK0J6-QHZaqkhsAKw1J3TwUievGRA2";
-                    var applicationID = cloudConfig.ApplicationId;
+                    var applicationID = cloudConfig.ApiKey;
 
                     //var senderId = "107379564375";
                     var senderId = cloudConfig.NotificationSender;

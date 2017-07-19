@@ -362,6 +362,7 @@ namespace DataProcessor
                 {
                     Console.WriteLine("*********Exception Occured Message******" + e.Message);
                     Console.WriteLine("*********Exception Occured StackTrace******" + e.StackTrace);
+                    Utility.Log("*********Exception Occured Message******" + e.Message);
                 }
             }
         }
