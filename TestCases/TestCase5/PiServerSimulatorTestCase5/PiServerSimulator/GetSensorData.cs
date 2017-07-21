@@ -20,17 +20,13 @@ namespace PiServerSimulator
         static double temperature_max = 73.4625259399414 * 0.6;
         static double pIIntTSTicks_min = 636226286370000000 * 0.9;
         static double pIIntTSTicks_max = 636289634974586426 * 0.9;
+        public string[] wirelessTagTemplate = new string[] { "Light Sensor", "Office" };
 
-        public void AddSensorData(DateTime timeStamp)
+        public void AddSensorData(DateTime timeStamp,string sensorName)
         {
             rnd = new Random();
-
-            string[] wirelessTagTemplate = new string[] { "Light Sensor 1", "Office 1" };
-
             string sensorDataInsertQuery = "INSERT INTO SensorData([Wireless Tag Template],[TimeStamp],[Brightness],[Humidity],[Name],[Temperature],[PIIntTSTicks],[PIIntShapeID]) VALUES (@WirelessTagTemplate,@TimeStamp,@Brightness,@Humidity,@Name,@Temperature,@PIIntTSTicks,@PIIntShapeID)";
-
-            int number = rnd.Next(0, wirelessTagTemplate.Length - 1);
-
+            
             try
             {
 
@@ -42,11 +38,11 @@ namespace PiServerSimulator
                         using (SqlCommand cmd = new SqlCommand(sensorDataInsertQuery, sqlConnection, sqlTransaction))
                         {
 
-                            cmd.Parameters.AddWithValue("@WirelessTagTemplate", wirelessTagTemplate[number]);
+                            cmd.Parameters.AddWithValue("@WirelessTagTemplate", sensorName);
                             cmd.Parameters.AddWithValue("@TimeStamp", timeStamp);
                             cmd.Parameters.AddWithValue("@Brightness", Program.RandomNumberBetween(0, brightness));
                             cmd.Parameters.AddWithValue("@Humidity", Program.RandomNumberBetween(humidity_min, humidity_max));
-                            cmd.Parameters.AddWithValue("@Name", wirelessTagTemplate[number]);
+                            cmd.Parameters.AddWithValue("@Name", sensorName);
                             cmd.Parameters.AddWithValue("@Temperature", Program.RandomNumberBetween(temperature_min, temperature_max));
                             cmd.Parameters.AddWithValue("@PIIntTSTicks", Program.RandomNumberBetween(pIIntTSTicks_min, pIIntTSTicks_max));
                             cmd.Parameters.AddWithValue("@PIIntShapeID", rnd.Next(1, 3));
