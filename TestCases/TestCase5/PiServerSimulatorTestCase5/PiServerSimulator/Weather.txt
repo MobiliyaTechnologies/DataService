@@ -1,0 +1,18 @@
+CREATE TABLE [dbo].[Weather](
+	[Id] [bigint] IDENTITY(1,1) NOT NULL,
+	[Weather] [nvarchar](4000) NULL,
+	[TimeStamp] [datetime] NULL,
+	[Pressure] [float] NULL,
+	[Relative Humidity] [float] NULL,
+	[Temperature] [float] NULL,
+	[Visibility] [float] NULL,
+	[Weather.Weather] [nvarchar](4000) NULL,
+	[Wind Direction] [nvarchar](4000) NULL,
+	[Wind Speed] [float] NULL,
+	[PIIntTSTicks] [bigint] NULL,
+	[PIIntShapeID] [bigint] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
