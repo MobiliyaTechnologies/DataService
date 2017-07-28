@@ -200,13 +200,10 @@ namespace PiServerSimulator
                         GetPowerGridView powerGridView = new GetPowerGridView();
                         powerGridView.AddPowerGridView(buildingInfo, timeStamp);
                     }
-                }
+                    GetWeather weatherData = new GetWeather();
+                    weatherData.AddWeatherData(timeStamp);
 
-                
-               
-              
-                //GetWeather weatherData = new GetWeather();
-                //weatherData.AddWeatherData(timeStamp);
+                }
                 Console.WriteLine("Complete time entry: " + timeStamp.ToString());
             }
             catch (Exception ex)
@@ -228,6 +225,8 @@ namespace PiServerSimulator
                     powerGridView.AddPowerGridView(buildingInfo, entryTime);
                 }
                 Console.Write("\r Inserted value for the Day {0} ", entryTime.Date);
+                GetWeather weatherData = new GetWeather();
+                weatherData.AddWeatherData(entryTime);
             }
         }
 
