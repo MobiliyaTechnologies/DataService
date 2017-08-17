@@ -18,6 +18,7 @@ namespace PiServerSimulator
         static bool IsBacklogFinished = false;
         static int previousPendingDays = 0;
         static int sensorCount = 0;
+        static List<string> RuntimeSensors = new List<string>();
         static void Main(string[] args)
         {
             Console.WriteLine("Enter Number of previous days for generating data:: ");
@@ -70,8 +71,7 @@ namespace PiServerSimulator
                 CreateTableIfNotExist();
                 DateTime timeStamp = DateTime.UtcNow;
                 DateTime startDate = timeStamp;
-                if (previousPendingDays > 0 && (!IsBacklogFinished))//means we have previous days to complete
-                {
+               
                     startDate = timeStamp.AddDays(-previousPendingDays);
                     using (SqlConnection sqlConnection = new SqlConnection(ConfigurationSetting.ConnectionString))
                     {
@@ -96,15 +96,23 @@ namespace PiServerSimulator
                         }
                         AddPreviousData(timeStamp, startDate);
                     }
-                }
-                //Insert Sensor Data 
+                previousPendingDays = 0;
+                //Get Existing sensor names from db
+                UpdateSensorsList();//Runtimesensors list updated
+                int maxDbSensorCount = RuntimeSensors.Count;
+                //
+
+
+                //Insert Sensor Data for the first time with ramdom name generated at runtime
                 GetSensorData sensorData = new GetSensorData();
-                for (int i = 1; i <= sensorCount; i++)
+                for (int i = maxDbSensorCount + 1; i <= maxDbSensorCount + sensorCount; i++)
                 {
                     Random rnd = new Random();
                     int index = rnd.Next(0, sensorData.wirelessTagTemplate.Length);
-                    sensorData.AddSensorData(timeStamp, sensorData.wirelessTagTemplate[index] + " " + i);
-                    Console.WriteLine("Inserted Sensor : "+sensorData.wirelessTagTemplate[index] + " " + i);
+                    string sensorName = sensorData.wirelessTagTemplate[index] + " " + i;
+                    RuntimeSensors.Add(sensorName);
+                    sensorData.AddSensorData(timeStamp, sensorName);
+                    Console.WriteLine("Inserted Sensor : " + sensorName);
                 }
 
                 processTimer = new System.Timers.Timer(60000);
@@ -123,7 +131,7 @@ namespace PiServerSimulator
             using (SqlConnection sqlConnection = new SqlConnection(ConfigurationSetting.ConnectionString))
             {
                 sqlConnection.Open();
-                for(int name=0;name<TableNames.Length;name++)
+                for (int name = 0; name < TableNames.Length; name++)
                 {
                     string cmdText = @"IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLES 
                        WHERE TABLE_NAME='" + TableNames[name] + "') SELECT 1 ELSE SELECT 0";
@@ -136,11 +144,43 @@ namespace PiServerSimulator
                 }
 
                 sqlConnection.Close();
-                
+
             }
         }
-       
-        static void CreateTable(string tableName,SqlConnection connection)
+
+        static void UpdateSensorsList()
+        {
+            string sensorDataSelectQuery = "Select [Name] from SensorData";
+
+            try
+            {
+
+                using (SqlConnection sqlConnection = new SqlConnection(ConfigurationSetting.ConnectionString))
+                {
+                    sqlConnection.Open();
+                    using (SqlTransaction sqlTransaction = sqlConnection.BeginTransaction())
+                    {
+                        using (SqlCommand cmd = new SqlCommand(sensorDataSelectQuery, sqlConnection, sqlTransaction))
+                        {
+                            SqlDataReader sensorNameSqlDataReader = cmd.ExecuteReader();
+                            while (sensorNameSqlDataReader.Read())
+                            {
+                                RuntimeSensors.Add(sensorNameSqlDataReader["Name"].ToString());
+                            }
+                            sensorNameSqlDataReader.Close();
+                        }
+                        sqlTransaction.Commit();
+                    }
+                    sqlConnection.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception occured in Update Sensor List" + ex.Message);
+            }
+        }
+
+        static void CreateTable(string tableName, SqlConnection connection)
         {
             string query = GetTextFromFile(tableName + ".txt");
             SqlCommand cmdCreateTable = new SqlCommand(query, connection);
@@ -158,10 +198,7 @@ namespace PiServerSimulator
             {
                 DateTime timeStamp = DateTime.UtcNow;
                 DateTime startDate = timeStamp;
-                if(previousPendingDays <=0)
-                {
-                    IsBacklogFinished = true;
-                }
+                
                 ///Get Previous Data///////////////
                 if (!IsBacklogFinished)
                 {
@@ -191,7 +228,7 @@ namespace PiServerSimulator
                         IsBacklogFinished = true;
                     }
                 }
-                else
+                else //real time data population
                 {
                     Console.WriteLine("Going to enter time entry: " + timeStamp.ToString());
                     for (int building = 0; building < GetPowerGridView.BuildingName.Length; building++)
@@ -202,6 +239,12 @@ namespace PiServerSimulator
                     }
                     GetWeather weatherData = new GetWeather();
                     weatherData.AddWeatherData(timeStamp);
+
+                    GetSensorData sensorData = new GetSensorData();
+                    for (int i = 0; i < RuntimeSensors.Count; i++)
+                    {
+                        sensorData.AddSensorData(timeStamp, RuntimeSensors.ElementAt(i));
+                    }
 
                 }
                 Console.WriteLine("Complete time entry: " + timeStamp.ToString());
