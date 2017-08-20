@@ -150,7 +150,7 @@ namespace PiServerSimulator
 
         static void UpdateSensorsList()
         {
-            string sensorDataSelectQuery = "Select [Name] from SensorData";
+            string sensorDataSelectQuery = "Select DISTINCT [Name] from SensorData";
 
             try
             {
