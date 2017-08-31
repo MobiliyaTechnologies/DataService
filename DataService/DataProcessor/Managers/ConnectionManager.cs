@@ -207,7 +207,7 @@ namespace DataProcessor.Managers
             {
                 Console.WriteLine("Exception occured ::UpdateUTCTimeDifference()  in Update UTC Time Difference " + ex.Message);
                 Utility.Log("Exception occured ::UpdateUTCTimeDifference()  in Update UTC Time Difference " + ex.Message);
-
+                Utility.LogException(ex);
             }
         }
 
@@ -233,7 +233,8 @@ namespace DataProcessor.Managers
             catch (Exception ex)
             {
                 Console.WriteLine("Exception occured in InserPIConfigurationDetailsToDB", ex.Message);
-                //Utility.Log("Exception occured ::InserPIConfigurationDetailsToDB()" + ex.Message);
+                Utility.Log("Exception occured ::InserPIConfigurationDetailsToDB()" + ex.Message);
+                Utility.LogException(ex);
             }
         }
 

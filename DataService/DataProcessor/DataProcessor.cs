@@ -35,9 +35,8 @@ namespace DataProcessor
 
 
        
-        public DataProcessor(EventLog log)
-        {
-            Utility.InitLog(log);
+        public DataProcessor()
+        {   
         }
         #endregion
 
@@ -111,6 +110,7 @@ namespace DataProcessor
 
                 Console.WriteLine("Error occured in processData" + e.Message);
                 Utility.Log("Error occured in processData" + e.Message);
+                Utility.LogException(e);
             }
         }
 
@@ -142,7 +142,7 @@ namespace DataProcessor
                     SqlConnection piConnection = ConnectionManager.Instance().GetPISQLConnection(piServerName);
                     ConnectionManager.Instance().OpenSQLConnection(piConnection);
                     Console.WriteLine("Pi SQL Connection Opened");
-                    Utility.Log("Pi SQL Connection Opened");
+                    //Utility.Log("Pi SQL Connection Opened");
 
                     SqlConnection weatherConnection = ConnectionManager.Instance().GetPISQLConnection(piServerName);
                     ConnectionManager.Instance().OpenSQLConnection(weatherConnection);
@@ -323,7 +323,7 @@ namespace DataProcessor
                         //Hack Hack Hack
                         if (meterDataList != null && meterDataList.Count != 0)
                         {
-                            Utility.Log("ProcessDataByPIServer() , NeterDataList Count == "+ meterDataList.Count);
+                           // Utility.Log("ProcessDataByPIServer() , MeterDataList Count == "+ meterDataList.Count);
                             //    This condition means we get all(29)entries of that perticular half hour
                             if (Utility.TrimDateToMinute(lastProcessedDate) == endTime.AddMinutes(-1))
                             {
@@ -362,7 +362,8 @@ namespace DataProcessor
                 {
                     Console.WriteLine("*********Exception Occured Message******" + e.Message);
                     Console.WriteLine("*********Exception Occured StackTrace******" + e.StackTrace);
-                    Utility.Log("*********Exception Occured Message******" + e.Message);
+                    Utility.Log("*********Exception Occured In Main Loop******" + e.Message);
+                    Utility.LogException(e);
                 }
             }
         }
@@ -471,6 +472,7 @@ namespace DataProcessor
             {
                 Console.WriteLine("Exception occured in update database"+ ex.Message);
                 Utility.Log("Exception occured in Update Database method" + ex.Message);
+                Utility.LogException(ex);
             }
         }
 
@@ -501,10 +503,11 @@ namespace DataProcessor
             {
                 weatherReader = weatherCmd.ExecuteReader();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 Console.WriteLine("Weather table does not exists.");
                 Utility.Log("Weather table does not exists.");
+                Utility.LogException(ex);
             }
 
 
@@ -602,6 +605,7 @@ namespace DataProcessor
             catch (Exception ex)
             {
                 Utility.Log("Exception occured in get Meter and Breaker details List " + ex.Message);
+                Utility.LogException(ex);
                 return meterList;
             }
         }
@@ -638,6 +642,7 @@ namespace DataProcessor
             catch (Exception e)
             {
                 Utility.Log("Exception Occured getMeterDetails()" + e.Message);
+                Utility.LogException(e);
                 throw e;
             }
             finally
@@ -794,10 +799,12 @@ namespace DataProcessor
                     azureSQLConnection.Close();
 
                 }
+                Utility.Log("End of Method InsertMetersIntoAzure()");
             }
             catch (Exception e)
             {
                 Utility.Log("Exception Occured : InsertMetersIntoAzure()" + e.Message);
+                Utility.LogException(e);
             }
         }
         public double GetAndTimezone()

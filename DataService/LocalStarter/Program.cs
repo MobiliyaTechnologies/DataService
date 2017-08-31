@@ -12,9 +12,8 @@ namespace LocalStarter
     {
         static void Main(string[] args)
         {
-            EventLog eventLog = new EventLog();
-            eventLog.Source = "Application";
-            DataProcessor.DataProcessor process = new DataProcessor.DataProcessor(eventLog);
+           
+            DataProcessor.DataProcessor process = new DataProcessor.DataProcessor();
             process.ProcessData();
 
         }

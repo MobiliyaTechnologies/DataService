@@ -99,6 +99,7 @@ namespace DataProcessor.Managers
             catch (Exception ex)
             {
                 Utility.Log("Exception Occured :: GetTableFromCSV() :: " + ex.Message);
+                Utility.LogException(ex);
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("{0} > Exception: {1}", DateTime.Now, ex.Message);
                 Console.ResetColor();                

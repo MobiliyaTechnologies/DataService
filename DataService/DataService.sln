@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LocalStarter", "LocalStarte
 EndProject
 Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "DataServiceSetup", "DataServiceSetup\DataServiceSetup.vdproj", "{0EDEA96A-DBE7-439C-9021-305923B71B26}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Logger", "Logger\Logger.csproj", "{9851A1BF-84A8-4E3A-ADE8-DA6F765CC3B3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{0EDEA96A-DBE7-439C-9021-305923B71B26}.Debug|Any CPU.Build.0 = Debug
 		{0EDEA96A-DBE7-439C-9021-305923B71B26}.Release|Any CPU.ActiveCfg = Release
 		{0EDEA96A-DBE7-439C-9021-305923B71B26}.Release|Any CPU.Build.0 = Release
+		{9851A1BF-84A8-4E3A-ADE8-DA6F765CC3B3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9851A1BF-84A8-4E3A-ADE8-DA6F765CC3B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9851A1BF-84A8-4E3A-ADE8-DA6F765CC3B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9851A1BF-84A8-4E3A-ADE8-DA6F765CC3B3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
