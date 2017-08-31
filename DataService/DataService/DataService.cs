@@ -8,6 +8,7 @@ using System.ServiceProcess;
 using System.Text;
 using System.Threading.Tasks;
 using System.Configuration;
+using Logger.AppInsights;
 
 namespace DataService
 {
@@ -18,47 +19,52 @@ namespace DataService
         {
             InitializeComponent();
 
-            if (!EventLog.SourceExists("DataServiceEM"))
-            {
-                //An event log source should not be created and immediately used.
-                //There is a latency time to enable the source, it should be created
-                //prior to executing the application that uses the source.
-                //Execute this sample a second time to use the new source.
-                EventLog.CreateEventSource("DataServiceEM", "DataServiceEM");
-                Console.WriteLine("CreatedEventSource");
-                Console.WriteLine("Exiting, execute the application a second time to use the source.");
-                // The source is created.  Exit the application to allow it to be registered.
-                //  return;
-            }
-            else
-            {
-                EventLog.Source = "DataServiceEM";
-                // Write an informational entry to the event log.    
-                EventLog.WriteEntry("Writing to event log.");
-            }
+            //if (!EventLog.SourceExists("DataServiceEM"))
+            //{
+            //    //An event log source should not be created and immediately used.
+            //    //There is a latency time to enable the source, it should be created
+            //    //prior to executing the application that uses the source.
+            //    //Execute this sample a second time to use the new source.
+            //    EventLog.CreateEventSource("DataServiceEM", "DataServiceEM");
+            //    Console.WriteLine("CreatedEventSource");
+            //    Console.WriteLine("Exiting, execute the application a second time to use the source.");
+            //    // The source is created.  Exit the application to allow it to be registered.
+            //    //  return;
+            //}
+            //else
+            //{
+            //    EventLog.Source = "DataServiceEM";
+            //    // Write an informational entry to the event log.    
+            //    EventLog.WriteEntry("Writing to event log.");
+            //}
 
 
         }
 
         protected override void OnStart(string[] args)
         {
-            EventLog.WriteEntry("Inside on Start.");
+            //    EventLog.WriteEntry("Inside on Start.");
+            Telemetry.TrackEvent("Inside on Start of Service.");
             try
             {
-                DataProcessor.DataProcessor process = new DataProcessor.DataProcessor(EventLog);
+                DataProcessor.DataProcessor process = new DataProcessor.DataProcessor();
                 process.ProcessData();
-                EventLog.WriteEntry(" Data service process started.");
+                Telemetry.TrackEvent(" Data service process started.");
+                //      EventLog.WriteEntry(" Data service process started.");
             }
             catch (Exception ex)
             {
-                EventLog.WriteEntry(" Service Exception occured: " + ex.Message);
+                //    EventLog.WriteEntry(" Service Exception occured: " + ex.Message);
+                Telemetry.TrackEvent(" Service Exception occured: " + ex.Message);
+                Telemetry.TrackException(ex);
             }
 
         }
 
         protected override void OnStop()
         {
-            EventLog.WriteEntry("Inside ONStop");
+            Telemetry.TrackEvent("Inside ONStop of Service");
+           // EventLog.WriteEntry("Inside ONStop");
         }
     }
 }

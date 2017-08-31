@@ -51,6 +51,7 @@ namespace DataProcessor.Managers
             }
             catch (Exception e)
             {
+                Utility.LogException(e);
                 return default(T);
             }
         }

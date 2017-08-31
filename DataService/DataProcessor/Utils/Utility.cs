@@ -1,4 +1,5 @@
 ﻿using DataProcessor.DataModels;
+using Logger.AppInsights;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -134,15 +135,13 @@ namespace DataProcessor.Utils
 
         public static void Log(object value)
         {
-            if(value != null)
-            {
-                eventLog.WriteEntry(value.ToString());
-            }
+            if(value!=null)
+            Telemetry.TrackEvent(value.ToString());
         }
-        static EventLog eventLog;
-        public static void InitLog(EventLog log)
+        public static void LogException(Exception value)
         {
-            eventLog = log;
+            if (value != null)
+                Telemetry.TrackException(value);
         }
 
 

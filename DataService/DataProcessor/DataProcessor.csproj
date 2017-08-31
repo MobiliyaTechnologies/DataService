@@ -77,6 +77,10 @@
       <Project>{39f5e5e0-638d-45a2-b35b-68018c2f713a}</Project>
       <Name>DataModels</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Logger\Logger.csproj">
+      <Project>{9851a1bf-84a8-4e3a-ade8-da6f765cc3b3}</Project>
+      <Name>Logger</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
