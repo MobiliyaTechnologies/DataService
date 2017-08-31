@@ -95,6 +95,10 @@
       <Project>{b109980e-b474-4b6c-ac96-8be5ab8a582b}</Project>
       <Name>DataProcessor</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Logger\Logger.csproj">
+      <Project>{9851a1bf-84a8-4e3a-ade8-da6f765cc3b3}</Project>
+      <Name>Logger</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
