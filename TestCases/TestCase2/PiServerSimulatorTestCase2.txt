@@ -1,0 +1,25 @@
+PiServer1(last 3 months data):
+Make local server to your system say System1.
+Create database same as the PiServer.
+
+Update AppConfig file of Simulator say simulator1
+PiConnectionString  = "data source=KETANK-PC\SQLEXPRESS;initial catalog=PiTestCase1;persist security info=True;user id=sa;password=Mobiliya@123"
+
+
+
+Note: This simulator works with the current time same as the real system would be.
+
+This updates/inserts table 'Powergridview','SensorData',and 'Weather'
+
+This simulator based on the assumptions 
+1 university 
+1 campus
+Each campus has 1 PiServers
+Each campus/PiServer has 1 buildings say Chemistry building.
+Each Buidling has 7 unique powerscouts.
+
+So for 1 PiServer we have 7 unique powerscouts.
+
+
+
+

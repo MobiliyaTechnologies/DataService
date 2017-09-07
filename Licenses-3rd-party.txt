@@ -1,0 +1,12 @@
+This document contains the list of Third Party Software included with
+EM Data-Service, along with the license information.
+
+Third Party Software may impose additional restrictions and it is the
+user's responsibility to ensure that they have met the licensing
+requirements of Data-Service and the relevant license of the Third Party
+Software they are using.
+
+Microsoft Azure Configuration Manager
+url - https://azure.microsoft.com
+License - Apache 2.0
+Reference - https://raw.githubusercontent.com/WindowsAzure/azure-sdk-for-net/master/LICENSE.txt
